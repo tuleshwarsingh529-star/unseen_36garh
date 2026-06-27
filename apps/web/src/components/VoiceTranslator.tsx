@@ -87,8 +87,10 @@ export function VoiceTranslator() {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       rec.onerror = (event: any) => {
-        console.error("Speech Recognition Error:", event.error);
-        if (event.error !== "no-speech") {
+        if (event.error === "not-allowed") {
+          setErrorMsg("Microphone access denied. Please allow microphone permissions in your browser.");
+        } else if (event.error !== "no-speech") {
+          console.error("Speech Recognition Error:", event.error);
           setErrorMsg("Could not understand audio. Please try again.");
         }
         setIsListening(false);
