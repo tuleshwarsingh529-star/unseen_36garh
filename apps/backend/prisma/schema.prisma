@@ -1,0 +1,248 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// USER & AUTH MODELS
+// ─────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id            String          @id @default(uuid())
+  fullName      String
+  email         String          @unique
+  password      String
+  avatar        String?
+  role          String          @default("USER")
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  bookmarks      Bookmark[]
+  reviews        Review[]
+  folklore       Folklore[]
+  bookings       Booking[]
+  creatorProfile CreatorProfile?
+  refreshTokens  RefreshToken[]
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONTENT MODELS
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Folklore {
+  id            String   @id @default(uuid())
+  title         String
+  monument      String
+  location      String
+  description   String
+  images        String   @default("[]")
+  videos        String   @default("[]")
+  audioUrl      String?
+  audioNarrator String?
+  verified      Boolean  @default(false)
+  authorId      String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  author        User     @relation(fields: [authorId], references: [id])
+}
+
+model Place {
+  id            String   @id @default(uuid())
+  name          String
+  slug          String   @unique
+  description   String
+  district      String
+  categoryId    String
+
+  latitude      Float
+  longitude     Float
+
+  heroImage     String
+  bestSeason    String?
+
+  history       String?
+  safetyInfo    String?
+  rules         String?
+  audioUrl      String?
+  audioNarrator String?
+
+  verified      Boolean  @default(false)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  category    Category  @relation(fields: [categoryId], references: [id])
+  media       Media[]
+  reviews     Review[]
+  bookmarks   Bookmark[]
+  bookings    Booking[]
+}
+
+model Category {
+  id     String  @id @default(uuid())
+  name   String
+  slug   String  @unique
+
+  places Place[]
+}
+
+model Media {
+  id      String @id @default(uuid())
+  url     String
+  type    String @default("IMAGE")
+  placeId String
+
+  place   Place  @relation(fields: [placeId], references: [id])
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  rating    Int      // 1–5 stars
+  comment   String
+  lang      String   @default("en") // Language the review was written in
+  helpful   Int      @default(0)    // Helpful votes
+
+  userId    String
+  placeId   String
+
+  user      User     @relation(fields: [userId], references: [id])
+  place     Place    @relation(fields: [placeId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([placeId])
+  @@index([userId])
+}
+
+model Bookmark {
+  id      String @id @default(uuid())
+
+  userId  String
+  placeId String
+
+  user    User  @relation(fields: [userId], references: [id])
+  place   Place @relation(fields: [placeId], references: [id])
+
+  @@unique([userId, placeId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BOOKING SYSTEM
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Booking {
+  id          String   @id @default(uuid())
+  userId      String
+  placeId     String
+  visitDate   DateTime
+  guests      Int      @default(1)
+  totalPrice  Float    @default(0)
+  status      String   @default("CONFIRMED")  // CONFIRMED | CANCELLED | COMPLETED
+  notes       String?
+  contactPhone String?
+
+  user        User     @relation(fields: [userId], references: [id])
+  place       Place    @relation(fields: [placeId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([placeId])
+  @@index([visitDate])
+}
+
+
+model CreatorProfile {
+  id       String  @id @default(uuid())
+  userId   String  @unique
+
+  verified  Boolean @default(false)
+  bio       String?
+  instagram String?
+  youtube   String?
+
+  user      User    @relation(fields: [userId], references: [id])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EMERGENCY & SAFETY MODELS
+// ─────────────────────────────────────────────────────────────────────────────
+
+model EmergencyAlert {
+  id               String    @id @default(uuid())
+  alertId          String    @unique
+  touristName      String
+  touristPhone     String?
+  medicalNotes     String?
+  latitude         Float
+  longitude        Float
+  status           String    @default("DISPATCHED")
+  primaryResponder String
+  createdAt        DateTime  @default(now())
+  resolvedAt       DateTime?
+}
+
+/// Dynamic registry of rescue stations — replaces the hardcoded REGIONAL_STATIONS array.
+/// Government admin panel can add / edit these without code deployments.
+model EmergencyStation {
+  id        String  @id @default(uuid())
+  name      String
+  phone     String
+  type      String  // 'police' | 'hospital' | 'ranger'
+  district  String
+  latitude  Float
+  longitude Float
+  active    Boolean @default(true)
+
+  @@index([district])
+  @@index([type])
+}
+
+model Translation {
+  id         String   @id @default(uuid())
+  lang       String   // "en", "hi", "cg", "gondi", "halbi"
+  entityType String   // "Place", "Category", "Folklore"
+  entityId   String
+  field      String   // "name", "description", "tagline", "story"
+  value      String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([lang, entityType, entityId, field])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LIVE TRANSLATION CACHE (Google Cloud Translate API results)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model TranslationCache {
+  id          String   @id @default(uuid())
+  sourceText  String
+  sourceLang  String   @default("en")
+  targetLang  String
+  translated  String
+  apiProvider String   @default("google")
+  createdAt   DateTime @default(now())
+
+  @@unique([sourceText, sourceLang, targetLang])
+  @@index([targetLang])
+}
+
