@@ -1,5 +1,6 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 @Injectable()
 export class ItineraryService {
@@ -13,6 +14,9 @@ export class ItineraryService {
     if (durationDays < 1 || durationDays > 7) {
       throw new BadRequestException('Duration must be between 1 and 7 days.');
     }
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    const isMock = !apiKey || apiKey === 'your_google_gemini_api_key' || apiKey.trim() === '';
 
     // 1. Fetch verified places in the targeted district
     const places = await this.prisma.place.findMany({
@@ -28,108 +32,87 @@ export class ItineraryService {
       return [];
     }
 
-    // 2. Filter by ecological capacity (simulated check since load fields are local mock parameters)
-    const safePlaces = places.filter(place => {
-      const maxCapacity = 500;
-      const currentLoad = (place.name.length * 17) % 450; 
-      return currentLoad < maxCapacity;
+    if (isMock) {
+      console.warn("GEMINI_API_KEY not configured. Falling back to mock itinerary logic.");
+      return [
+        {
+          day: 1,
+          distanceTraveledKm: pace === 'slow' ? 30 : 60,
+          stops: places.slice(0, 2).map(p => ({
+            name: p.name,
+            slug: p.slug,
+            coordinates: { lat: p.latitude, lng: p.longitude },
+            bestSeasonInfo: p.bestSeason,
+            safetyRules: p.rules
+          }))
+        },
+        ...(durationDays > 1 ? [{
+          day: 2,
+          distanceTraveledKm: pace === 'active' ? 120 : 45,
+          stops: places.slice(2, 4).map(p => ({
+            name: p.name,
+            slug: p.slug,
+            coordinates: { lat: p.latitude, lng: p.longitude },
+            bestSeasonInfo: p.bestSeason,
+            safetyRules: p.rules
+          }))
+        }] : [])
+      ];
+    }
+
+    // Prepare context for the AI
+    const availablePlacesContext = places.map(p => ({
+      name: p.name,
+      slug: p.slug,
+      coordinates: { lat: p.latitude, lng: p.longitude },
+      bestSeason: p.bestSeason,
+      safetyRules: p.rules,
+      description: p.description
+    }));
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-1.5-flash", 
+      generationConfig: { responseMimeType: "application/json" } 
     });
 
-    if (safePlaces.length === 0) {
-      return [];
-    }
+    const prompt = `You are an expert AI travel planner for Chhattisgarh Tourism.
+Generate a realistic ${durationDays}-day travel itinerary for the district of ${district}.
+The traveler's pace is "${pace}" (slow = fewer places with more relaxation, moderate = balanced, active = packed schedule).
+Only use the following verified places from our database for the itinerary:
+${JSON.stringify(availablePlacesContext, null, 2)}
 
-    // 3. Sort by priority score (calculate mock rating based on name metrics)
-    const scoredPlaces = safePlaces.map(place => {
-      const rating = 4.0 + ((place.name.length % 11) / 10);
-      return { ...place, rating };
-    });
-    scoredPlaces.sort((a, b) => b.rating - a.rating);
+Requirements:
+- Plan logical routes based on coordinates.
+- Return the response STRICTLY as a JSON array where each object represents a day.
+- Calculate approximate 'distanceTraveledKm' for the day.
 
-    const itinerary = [];
-    const visited = new Set<string>();
-    let currentCoordinates = { lat: 21.2787, lng: 81.8661 }; // Start at Raipur coordinates
-
-    for (let day = 1; day <= durationDays; day++) {
-      const dayStops = [];
-      const maxDailyDistance = pace === 'slow' ? 30.0 : pace === 'moderate' ? 70.0 : 150.0;
-      let dailyTravelKm = 0.0;
-
-      while (dailyTravelKm < maxDailyDistance && dayStops.length < 3) {
-        const nextPlace = this.findNearestUnvisited(currentCoordinates, scoredPlaces, visited);
-        if (!nextPlace) {
-          break;
-        }
-
-        const dist = this.calculateDistance(
-          currentCoordinates.lat,
-          currentCoordinates.lng,
-          nextPlace.latitude,
-          nextPlace.longitude,
-        );
-
-        if (dailyTravelKm + dist > maxDailyDistance && dayStops.length > 0) {
-          break;
-        }
-
-        visited.add(nextPlace.id);
-        dayStops.push({
-          name: nextPlace.name,
-          slug: nextPlace.slug,
-          coordinates: { lat: nextPlace.latitude, lng: nextPlace.longitude },
-          bestSeasonInfo: nextPlace.bestSeason,
-          safetyRules: nextPlace.rules,
-        });
-
-        dailyTravelKm += dist;
-        currentCoordinates = { lat: nextPlace.latitude, lng: nextPlace.longitude };
+Schema:
+[
+  {
+    "day": 1,
+    "distanceTraveledKm": 12.5,
+    "stops": [
+      {
+        "name": "Place Name",
+        "slug": "place-slug",
+        "coordinates": { "lat": 12.3, "lng": 45.6 },
+        "bestSeasonInfo": "...",
+        "safetyRules": "..."
       }
+    ]
+  }
+]
+`;
 
-      itinerary.push({
-        day,
-        stops: dayStops,
-        distanceTraveledKm: Math.round(dailyTravelKm * 100) / 100,
-      });
+    try {
+      const result = await model.generateContent(prompt);
+      const responseText = result.response.text();
+      const parsedItinerary = JSON.parse(responseText);
+      return parsedItinerary;
+    } catch (error) {
+      console.error('Error generating AI itinerary:', error);
+      throw new InternalServerErrorException('Failed to generate AI itinerary. Please try again later.');
     }
-
-    return itinerary;
-  }
-
-  private findNearestUnvisited(
-    current: { lat: number; lng: number },
-    places: any[],
-    visited: Set<string>,
-  ) {
-    let nearest = null;
-    let minDist = Infinity;
-    for (const p of places) {
-      if (visited.has(p.id)) {
-        continue;
-      }
-      const dist = this.calculateDistance(current.lat, current.lng, p.latitude, p.longitude);
-      if (dist < minDist) {
-        minDist = dist;
-        nearest = p;
-      }
-    }
-    return nearest;
-  }
-
-  private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-    const R = 6371.0;
-    const dLat = this.deg2rad(lat2 - lat1);
-    const dLon = this.deg2rad(lon2 - lon1);
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(this.deg2rad(lat1)) *
-        Math.cos(this.deg2rad(lat2)) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-  }
-
-  private deg2rad(deg: number): number {
-    return deg * (Math.PI / 180);
   }
 }

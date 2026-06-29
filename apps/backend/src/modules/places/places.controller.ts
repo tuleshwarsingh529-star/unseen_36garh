@@ -39,12 +39,16 @@ export class PlacesController {
   @ApiQuery({ name: 'lat', type: Number, required: true })
   @ApiQuery({ name: 'lng', type: Number, required: true })
   @ApiQuery({ name: 'radiusKm', type: Number, required: false })
+  @ApiQuery({ name: 'district', type: String, required: false })
+  @ApiQuery({ name: 'block', type: String, required: false })
   async getNearby(
     @Query('lat', ParseFloatPipe) lat: number,
     @Query('lng', ParseFloatPipe) lng: number,
     @Query('radiusKm', new DefaultValuePipe(50), ParseFloatPipe) radiusKm: number,
+    @Query('district') district?: string,
+    @Query('block') block?: string,
   ) {
-    return this.placesService.findNearby(lat, lng, radiusKm);
+    return this.placesService.findNearby(lat, lng, radiusKm, district, block);
   }
 
   @Get(':slug')

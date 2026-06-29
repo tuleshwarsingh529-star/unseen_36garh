@@ -54,7 +54,7 @@ model Folklore {
   videos        String   @default("[]")
   audioUrl      String?
   audioNarrator String?
-  verified      Boolean  @default(false)
+  verified      Boolean  @default(true)
   authorId      String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -68,6 +68,7 @@ model Place {
   slug          String   @unique
   description   String
   district      String
+  block         String?
   categoryId    String
 
   latitude      Float
@@ -82,7 +83,7 @@ model Place {
   audioUrl      String?
   audioNarrator String?
 
-  verified      Boolean  @default(false)
+  verified      Boolean  @default(true)
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -174,7 +175,7 @@ model CreatorProfile {
   id       String  @id @default(uuid())
   userId   String  @unique
 
-  verified  Boolean @default(false)
+  verified  Boolean @default(true)
   bio       String?
   instagram String?
   youtube   String?

@@ -91,7 +91,7 @@ export class PlacesService {
     return place;
   }
 
-  async findNearby(lat: number, lng: number, radiusKm: number) {
+  async findNearby(lat: number, lng: number, radiusKm: number, district?: string, block?: string) {
     try {
       const places: any[] = await this.prisma.$queryRaw`
         SELECT 
@@ -115,7 +115,11 @@ export class PlacesService {
       console.warn('PostGIS query execution failed. Falling back to local mathematics calculations...', error.message);
       
       const allPlaces = await this.prisma.place.findMany({
-        where: { verified: true },
+        where: { 
+          verified: true,
+          ...(district ? { district } : {}),
+          ...(block ? { block } : {}) 
+        },
         include: { category: true, media: true }
       });
 
