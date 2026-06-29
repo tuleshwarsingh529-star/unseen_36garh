@@ -17,41 +17,60 @@ async function main() {
     });
   }
 
-  // Create Place
+  // Find or create Surguja District
+  let district = await prisma.district.findUnique({
+    where: { name: 'Surguja' }
+  });
+
+  if (!district) {
+    district = await prisma.district.create({
+      data: {
+        name: 'Surguja',
+        slug: 'surguja',
+        description: 'Surguja region featuring beautiful hills and valleys.',
+        image: '/uploads/ulta_pani_mainpat.jpeg'
+      }
+    });
+  }
+
+  // Create/Update Place
   const place = await prisma.place.upsert({
     where: { slug: 'ulta-pani-mainpat' },
     update: {
       heroImage: '/uploads/ulta_pani_mainpat.jpeg',
+      featuredImage: '/uploads/ulta_pani_mainpat.jpeg',
     },
     create: {
       name: 'Ulta Pani',
       slug: 'ulta-pani-mainpat',
-      description: 'A magical magnetic hill where water appears to flow upwards.',
-      district: 'Surguja',
+      shortDescription: 'A magical magnetic hill where water appears to flow upwards.',
+      fullDescription: 'Ulta Pani near Mainpat, Surguja is a unique natural phenomenon where water flows uphill against gravity due to local optical/geological layouts.',
+      districtId: district.id,
       categoryId: category.id,
       latitude: 22.8251,
       longitude: 83.2842,
       heroImage: '/uploads/ulta_pani_mainpat.jpeg',
+      featuredImage: '/uploads/ulta_pani_mainpat.jpeg',
       verified: true
     }
   });
 
-  // Create Media if it doesn't exist
-  const mediaCount = await prisma.media.count({
-    where: { placeId: place.id, url: '/uploads/ulta_pani_mainpat.jpeg' }
+  // Create Image if it doesn't exist
+  const imageCount = await prisma.image.count({
+    where: { placeId: place.id, imageUrl: '/uploads/ulta_pani_mainpat.jpeg' }
   });
 
-  if (mediaCount === 0) {
-    await prisma.media.create({
+  if (imageCount === 0) {
+    await prisma.image.create({
       data: {
-        url: '/uploads/ulta_pani_mainpat.jpeg',
-        type: 'IMAGE',
+        imageUrl: '/uploads/ulta_pani_mainpat.jpeg',
+        caption: 'Ulta Pani magnetic stream',
         placeId: place.id
       }
     });
   }
 
-  console.log('Successfully updated Ulta Pani Place and Media to use the new JPEG image.');
+  console.log('Successfully updated Ulta Pani Place and Image to use the new JPEG image.');
 }
 
 main()

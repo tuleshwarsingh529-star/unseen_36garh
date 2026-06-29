@@ -17,26 +17,31 @@ export class StorageService {
     }
   }
 
-  async saveFile(file: Express.Multer.File): Promise<string> {
+  async saveFile(file: Express.Multer.File, subfolder: string = ''): Promise<string> {
     if (!file) {
       throw new BadRequestException('No file provided for upload.');
     }
 
     // Secure the file extension and generate a unique name to prevent collisions or injection
     const fileExt = extname(file.originalname).toLowerCase();
-    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.mp4', '.webm', '.ogg'];
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.mp4', '.webm', '.ogg', '.pdf', '.webp', '.avif'];
     
     if (!allowedExtensions.includes(fileExt)) {
       throw new BadRequestException(`Unsupported file type: ${fileExt}`);
     }
 
+    const targetDir = subfolder ? join(this.uploadDir, subfolder) : this.uploadDir;
+    if (!existsSync(targetDir)) {
+      mkdirSync(targetDir, { recursive: true });
+    }
+
     const uniqueFileName = `${randomUUID()}${fileExt}`;
-    const filePath = join(this.uploadDir, uniqueFileName);
+    const filePath = join(targetDir, uniqueFileName);
 
     try {
       writeFileSync(filePath, file.buffer);
       // Returns relative path from server host
-      return `/uploads/${uniqueFileName}`;
+      return subfolder ? `/uploads/${subfolder}/${uniqueFileName}` : `/uploads/${uniqueFileName}`;
     } catch (error) {
       throw new BadRequestException(`Failed to save file: ${error.message}`);
     }

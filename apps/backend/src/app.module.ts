@@ -13,6 +13,12 @@ import { ItineraryModule } from './modules/itinerary/itinerary.module';
 import { TranslationModule } from './modules/translation/translation.module';
 import { BookingsModule } from './modules/bookings/bookings.module';
 import { CreatorsFeedModule } from './modules/creators-feed/creators-feed.module';
+import { SocketModule } from './modules/socket/socket.module';
+import { StoriesModule } from './modules/stories/stories.module';
+import { FeedModule } from './modules/feed/feed.module';
+import { MediaLibraryModule } from './modules/media-library/media-library.module';
+import { SyncMonitorModule } from './modules/sync-monitor/sync-monitor.module';
+import { CoreServicesModule } from './modules/core-services/core-services.module';
 import { PrismaService } from './database/prisma.service';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
@@ -39,6 +45,11 @@ import { APP_GUARD } from '@nestjs/core';
     TranslationModule,
     BookingsModule,
     CreatorsFeedModule,
+    SocketModule,
+    FeedModule,
+    MediaLibraryModule,
+    SyncMonitorModule,
+    CoreServicesModule,
   ],
   providers: [
     PrismaService,

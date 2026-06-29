@@ -112,7 +112,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="mt-2 w-full bg-forest-emerald hover:bg-emerald-800 text-sand-beige font-bold py-3.5 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 group disabled:opacity-50"
+            className="mt-2 w-full bg-forest-emerald hover:bg-emerald-800 text-sand-beige font-bold py-3.5 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 group disabled:opacity-50 cursor-pointer"
           >
             {loading ? "Authenticating..." : (
               <>
@@ -122,6 +122,35 @@ export default function LoginPage() {
             )}
           </button>
         </form>
+
+        {/* Demo Credentials Quick Fill */}
+        <div className="mt-6 p-4 rounded-2xl bg-forest-emerald/5 border border-forest-emerald/10 flex flex-col gap-3">
+          <span className="text-[10px] font-mono font-bold text-forest-emerald uppercase tracking-wider text-center block">
+            ⚡ Quick-Fill Seeded Credentials
+          </span>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setEmail("admin@cgtourism.gov.in");
+                setPassword("SuperSecureAdminPassword2026!");
+              }}
+              className="px-3 py-2 text-xs font-bold text-forest-emerald bg-white/80 border border-forest-emerald/20 rounded-xl hover:bg-forest-emerald hover:text-white transition-all shadow-sm cursor-pointer text-center"
+            >
+              🔑 Tourism Admin
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setEmail("aarav.creator@cgtourism.org");
+                setPassword("SuperSecureCreatorPassword2026!");
+              }}
+              className="px-3 py-2 text-xs font-bold text-tribal-terracotta bg-white/80 border border-tribal-terracotta/20 rounded-xl hover:bg-tribal-terracotta hover:text-white transition-all shadow-sm cursor-pointer text-center"
+            >
+              🎨 Verified Creator
+            </button>
+          </div>
+        </div>
 
         <div className="mt-8 pt-6 border-t border-charcoal-stone/10 text-center flex flex-col gap-2">
           <span className="text-xs text-charcoal-stone/60">

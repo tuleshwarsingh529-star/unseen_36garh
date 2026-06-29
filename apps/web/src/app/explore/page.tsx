@@ -72,6 +72,7 @@ const DISTRICTS = ["All", "Bastar", "Raipur", "Bilaspur", "Kawardha", "Surguja",
 const EXPERIENCES = ["Family-Friendly", "Eco-First", "Photography", "Offbeat"];
 
 export default function ExplorePage() {
+  const [destinations, setDestinations] = useState<Destination[]>(DESTINATIONS);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
   const [activeLayer, setActiveLayer] = useState<MapLayer>("satellite");
@@ -79,6 +80,53 @@ export default function ExplorePage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [creatorSpots, setCreatorSpots] = useState<{ name: string; lat: number; lng: number }[]>([]);
+
+  // Load destinations from API
+  useEffect(() => {
+    const loadDestinations = async () => {
+      try {
+        const res = await fetch("http://localhost:4000/api/v1/places");
+        if (res.ok) {
+          const data = await res.json();
+          const mapped = data.map((d: any) => ({
+            id: d.id,
+            name: d.name,
+            category: d.category.slug,
+            district: d.district?.name || "Bastar",
+            tagline: d.shortDescription || d.description || "",
+            coordinates: { 
+              lat: d.latitude, 
+              lng: d.longitude, 
+              mapX: d.slug === 'chitrakote-falls' ? 42 : d.slug === 'sirpur-monuments' ? 62 : d.slug === 'bhoramdeo-temple' ? 30 : 50, 
+              mapY: d.slug === 'chitrakote-falls' ? 78 : d.slug === 'sirpur-monuments' ? 42 : d.slug === 'bhoramdeo-temple' ? 30 : 50
+            },
+            heroImage: d.heroImage || d.featuredImage || "/chitrakote.png",
+            storyTitle: d.name,
+            story: d.fullDescription || d.description || "",
+            timings: d.openingTime && d.closingTime ? `${d.openingTime} - ${d.closingTime}` : "08:00 AM - 06:00 PM",
+            routes: d.address || "",
+            bestTime: d.bestSeason || "",
+            seasonalAdvice: "",
+            safety: "",
+            nearby: [],
+            localInsights: "",
+            ecoGuidance: "",
+            biodiversityScore: 85,
+            crowdCapacity: d.distanceFromCity ? d.distanceFromCity * 10 : 500,
+            rating: 4.8,
+            localFood: "",
+            photographySpots: ""
+          }));
+          if (mapped.length > 0) {
+            setDestinations(mapped);
+          }
+        }
+      } catch (err) {
+        console.warn("Could not fetch remote destinations, utilizing fallback database index.", err);
+      }
+    };
+    loadDestinations();
+  }, []);
 
   // Load verified creator spots from local storage
   useEffect(() => {
@@ -101,7 +149,7 @@ export default function ExplorePage() {
   }, []);
 
   // ── Compute filtered results ─────────────────────────────────────────────
-  const filteredDestinations = DESTINATIONS.filter((dest) => {
+  const filteredDestinations = destinations.filter((dest) => {
     const matchesSearch =
       dest.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       dest.tagline.toLowerCase().includes(searchQuery.toLowerCase());

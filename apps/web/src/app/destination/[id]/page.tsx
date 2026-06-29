@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
+import { use, useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { 
@@ -19,27 +19,152 @@ import {
   ChevronRight,
   Eye,
   Volume2,
-  VolumeX
+  VolumeX,
+  Loader2
 } from "lucide-react";
 import { getDestinationById, DESTINATIONS } from "../../data/destinations";
 import { useLanguage } from "../../../context/LanguageContext";
+
+interface PanoramaViewerProps {
+  imageUrl: string;
+}
+
+export function PanoramaViewer({ imageUrl }: PanoramaViewerProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [yaw, setYaw] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragRef = useRef({ x: 0, yaw: 0 });
+
+  useEffect(() => {
+    const canvas = canvasRef?.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let active = true;
+    const img = new window.Image();
+    img.src = imageUrl;
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      if (!active) return;
+      draw();
+    };
+
+    function draw() {
+      if (!canvas || !ctx || !img.complete) return;
+      const width = canvas.width;
+      const height = canvas.height;
+      ctx.clearRect(0, 0, width, height);
+
+      const offsetPct = (yaw / (2 * Math.PI)) % 1;
+      const offsetPixels = offsetPct * img.width;
+
+      ctx.drawImage(img, offsetPixels, 0, img.width - offsetPixels, img.height, 0, 0, width, height);
+      if (offsetPixels > 0) {
+        const destWidth = (offsetPixels / img.width) * width;
+        ctx.drawImage(img, 0, 0, offsetPixels, img.height, width - destWidth, 0, destWidth, height);
+      }
+    }
+    draw();
+    return () => { active = false; };
+  }, [imageUrl, yaw, canvasRef]);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    if (dragRef) dragRef.current = { x: e.clientX, yaw };
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !dragRef) return;
+    const dx = e.clientX - dragRef.current.x;
+    const sensitivity = 0.006;
+    setYaw(dragRef.current.yaw - dx * sensitivity);
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  return (
+    <div className="relative w-full aspect-video rounded-3xl overflow-hidden border border-charcoal-stone/10 shadow bg-black select-none">
+      <canvas
+        ref={canvasRef}
+        width={800}
+        height={450}
+        className="w-full h-full cursor-grab active:cursor-grabbing"
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+      />
+      <div className="absolute bottom-4 left-4 bg-black/70 backdrop-blur text-white text-[10px] px-3 py-1.5 rounded-xl flex items-center gap-1.5 pointer-events-none font-mono">
+        <span>↔ Drag to look around (360° Panorama View)</span>
+      </div>
+    </div>
+  );
+}
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
 export default function DestinationDetailPage({ params }: PageProps) {
-  // Resolve the dynamic params promise in Next.js 15 style
   const resolvedParams = use(params);
-  const destination = getDestinationById(resolvedParams.id);
-  const [activeTab, setActiveTab] = useState<"story" | "travel" | "eco" | "food">("story");
+  const [destination, setDestination] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"story" | "travel" | "eco" | "food" | "panorama">("story");
+
+  useEffect(() => {
+    const loadDestination = async () => {
+      try {
+        const res = await fetch(`http://localhost:4000/api/v1/places/${resolvedParams.id}`);
+        if (res.ok) {
+          const d = await res.json();
+          setDestination({
+            id: d.id,
+            name: d.name,
+            rating: 4.8,
+            category: d.category?.slug || "waterfalls",
+            district: d.district?.name || "Bastar",
+            tagline: d.shortDescription || d.description || "",
+            coordinates: { lat: d.latitude, lng: d.longitude },
+            heroImage: d.heroImage || d.featuredImage || "/chitrakote.png",
+            storyTitle: d.name,
+            story: d.fullDescription || d.description || "",
+            timings: d.openingTime && d.closingTime ? `${d.openingTime} - ${d.closingTime} (Everyday)` : "08:00 AM - 06:00 PM (Everyday)",
+            routes: d.address || "Located in regional Chhattisgarh corridor.",
+            bestTime: d.bestSeason || "July to February",
+            seasonalAdvice: d.bestSeason || "Standard seasonal precautions apply.",
+            safety: "Stay within guidelines.",
+            biodiversityScore: 85,
+            crowdCapacity: 600,
+            localFood: "Traditional Chila, Bastar Chutney",
+            photographySpots: "Main Entrance",
+            localInsights: "Beautiful scenic landscape",
+            audioUrl: d.audioUrl,
+            audioNarrator: d.audioNarrator,
+            panoramaUrls: d.panoramaUrls ? JSON.parse(d.panoramaUrls) : []
+          });
+        } else {
+          const staticDest = getDestinationById(resolvedParams.id);
+          setDestination({ ...staticDest, panoramaUrls: [] });
+        }
+      } catch (err) {
+        const staticDest = getDestinationById(resolvedParams.id);
+        setDestination({ ...staticDest, panoramaUrls: [] });
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadDestination();
+  }, [resolvedParams.id]);
+
   const {
     lang, t, speakText, stopSpeaking, isSpeaking, tDynamic,
     isPlayingAudio, audioProgress, audioDuration, audioNarrator,
     playAudioFile, pauseAudioFile, stopAudioFile,
   } = useLanguage();
 
-  // Stop speaking when user navigates away or tab changes to prevent speech continuing inappropriately
   useEffect(() => {
     return () => {
       stopSpeaking();
@@ -52,9 +177,17 @@ export default function DestinationDetailPage({ params }: PageProps) {
     stopAudioFile();
   }, [activeTab, stopSpeaking, stopAudioFile]);
 
-  // Format seconds → MM:SS display
   const formatTime = (sec: number) =>
     `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, "0")}`;
+
+  if (loading) {
+    return (
+      <div className="w-full min-h-[70vh] flex flex-col items-center justify-center gap-4 bg-sand-beige text-charcoal-stone p-6">
+        <Loader2 className="w-10 h-10 text-forest-emerald animate-spin" />
+        <p className="text-sm font-mono text-forest-emerald/60">Decoding telemetry archive...</p>
+      </div>
+    );
+  }
 
   if (!destination) {
     return (
@@ -169,13 +302,14 @@ export default function DestinationDetailPage({ params }: PageProps) {
               { id: "story", label: t("detail.tab_story"), icon: BookOpen },
               { id: "travel", label: t("detail.tab_travel"), icon: Compass },
               { id: "eco", label: t("detail.tab_eco"), icon: Leaf },
-              { id: "food", label: t("detail.tab_food"), icon: UtensilsCrossed }
+              { id: "food", label: t("detail.tab_food"), icon: UtensilsCrossed },
+              ...(destination.panoramaUrls && destination.panoramaUrls.length > 0 ? [{ id: "panorama", label: "360° Panorama", icon: Camera }] : [])
             ].map(tab => {
               const Icon = tab.icon;
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as "story" | "travel" | "eco" | "food")}
+                  onClick={() => setActiveTab(tab.id as "story" | "travel" | "eco" | "food" | "panorama")}
                   className={`flex items-center gap-2 text-sm font-sans font-bold px-4 py-3.5 border-b-2 cursor-pointer transition-all shrink-0 ${
                     activeTab === tab.id
                       ? "border-tribal-terracotta text-tribal-terracotta"
@@ -454,6 +588,28 @@ export default function DestinationDetailPage({ params }: PageProps) {
                 </div>
               </div>
 
+            </div>
+          )}
+
+          {/* TAB 5: 360° Panorama Views */}
+          {activeTab === "panorama" && destination.panoramaUrls && destination.panoramaUrls.length > 0 && (
+            <div className="flex flex-col gap-6 bg-white/50 p-6 sm:p-8 rounded-3xl border border-white/60 shadow-md">
+              <h3 className="text-base font-sans font-bold text-forest-emerald border-b border-charcoal-stone/15 pb-2 flex items-center gap-2">
+                <Camera className="w-5 h-5 text-tribal-terracotta" />
+                360° Panoramic Virtual Tour
+              </h3>
+              <p className="text-xs text-charcoal-stone/60 leading-relaxed font-sans -mt-2">
+                Drag on the image viewport below to rotate the view and explore the landmark in full 360-degree high definition.
+              </p>
+              
+              <div className="flex flex-col gap-8">
+                {destination.panoramaUrls.map((url: string, index: number) => (
+                  <div key={index} className="flex flex-col gap-3">
+                    <span className="text-xs font-mono font-bold text-tribal-terracotta uppercase">View #{index + 1}</span>
+                    <PanoramaViewer imageUrl={url} />
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

@@ -112,7 +112,7 @@ describe('UsersService Unit Tests', () => {
         role: 'CREATOR',
         creatorProfile: {
           bio: 'Tribal heritage guide.',
-          verified: false, // Default pending moderation review
+          isVerified: false, // Default pending moderation review
         },
       };
       prismaMock.user.update.mockResolvedValue(mockUpdatedUser);
@@ -125,7 +125,7 @@ describe('UsersService Unit Tests', () => {
 
       expect(result.success).toBe(true);
       expect(result.profile.role).toBe('CREATOR');
-      expect(result.profile.creatorProfile.verified).toBe(false);
+      expect(result.profile.creatorProfile.isVerified).toBe(false);
       expect(prismaMock.user.update).toHaveBeenCalled();
     });
   });

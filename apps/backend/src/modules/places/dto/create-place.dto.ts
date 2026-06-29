@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsNumber, IsOptional, IsUrl, IsArray } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsOptional, IsUrl, IsArray, IsBoolean } from 'class-validator';
 
 export class CreatePlaceDto {
   @IsString()
@@ -6,25 +6,52 @@ export class CreatePlaceDto {
   name: string;
 
   @IsString()
-  @IsNotEmpty({ message: 'Place description is required.' })
-  description: string;
+  @IsOptional()
+  shortDescription?: string;
 
   @IsString()
-  @IsNotEmpty({ message: 'District classification is required.' })
-  district: string;
+  @IsOptional()
+  fullDescription?: string;
 
   @IsString()
-  @IsNotEmpty({ message: 'Category identifier is required.' })
-  categoryId: string;
+  @IsOptional()
+  districtId?: string;
+
+  @IsString()
+  @IsOptional()
+  categoryId?: string;
 
   @IsNumber()
-  latitude: number;
+  @IsOptional()
+  latitude?: number;
 
   @IsNumber()
-  longitude: number;
+  @IsOptional()
+  longitude?: number;
 
-  @IsUrl({}, { message: 'Hero image must be a valid URL.' })
-  heroImage: string;
+  @IsString()
+  @IsOptional()
+  blockId?: string;
+
+  @IsNumber()
+  @IsOptional()
+  altitude?: number;
+
+  @IsString()
+  @IsOptional()
+  address?: string;
+
+  @IsString()
+  @IsOptional()
+  nearestCity?: string;
+
+  @IsNumber()
+  @IsOptional()
+  distanceFromCity?: number;
+
+  @IsString()
+  @IsOptional()
+  googleMapUrl?: string;
 
   @IsString()
   @IsOptional()
@@ -36,14 +63,88 @@ export class CreatePlaceDto {
 
   @IsString()
   @IsOptional()
-  safetyInfo?: string;
+  significance?: string;
 
   @IsString()
   @IsOptional()
-  rules?: string;
+  openingTime?: string;
+
+  @IsString()
+  @IsOptional()
+  closingTime?: string;
+
+  @IsNumber()
+  @IsOptional()
+  entryFee?: number;
+
+  @IsBoolean()
+  @IsOptional()
+  parkingAvailable?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  foodAvailable?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  guideAvailable?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  wheelchairAccessible?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  washroomAvailable?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  petFriendly?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  photographyAllowed?: boolean;
+
+  @IsString()
+  @IsOptional()
+  contactNumber?: string;
+
+  @IsString()
+  @IsOptional()
+  website?: string;
+
+  @IsString()
+  @IsOptional()
+  featuredImage?: string;
+
+  @IsString()
+  @IsOptional()
+  metaTitle?: string;
+
+  @IsString()
+  @IsOptional()
+  metaDescription?: string;
+
+  @IsString()
+  @IsOptional()
+  metaKeywords?: string;
+
+  @IsString()
+  @IsOptional()
+  status?: string; // DRAFT | PUBLISHED | FEATURED
 
   @IsArray()
   @IsString({ each: true })
   @IsOptional()
-  mediaUrls?: string[];
+  imageUrls?: string[];
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  videoUrls?: string[];
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  panoramaUrls?: string[];
 }

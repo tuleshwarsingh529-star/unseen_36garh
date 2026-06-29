@@ -23,7 +23,7 @@ export class ItineraryService {
       where: {
         verified: true,
         district: {
-          equals: district,
+          name: district,
         },
       },
     });
@@ -42,8 +42,8 @@ export class ItineraryService {
             name: p.name,
             slug: p.slug,
             coordinates: { lat: p.latitude, lng: p.longitude },
-            bestSeasonInfo: p.bestSeason,
-            safetyRules: p.rules
+            bestSeasonInfo: p.bestSeason || '',
+            safetyRules: ''
           }))
         },
         ...(durationDays > 1 ? [{
@@ -53,8 +53,8 @@ export class ItineraryService {
             name: p.name,
             slug: p.slug,
             coordinates: { lat: p.latitude, lng: p.longitude },
-            bestSeasonInfo: p.bestSeason,
-            safetyRules: p.rules
+            bestSeasonInfo: p.bestSeason || '',
+            safetyRules: ''
           }))
         }] : [])
       ];
@@ -65,9 +65,9 @@ export class ItineraryService {
       name: p.name,
       slug: p.slug,
       coordinates: { lat: p.latitude, lng: p.longitude },
-      bestSeason: p.bestSeason,
-      safetyRules: p.rules,
-      description: p.description
+      bestSeason: p.bestSeason || '',
+      safetyRules: '',
+      description: p.shortDescription || p.fullDescription || ''
     }));
 
     const genAI = new GoogleGenerativeAI(apiKey);

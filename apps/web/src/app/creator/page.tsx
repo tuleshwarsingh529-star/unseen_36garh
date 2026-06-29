@@ -3,29 +3,41 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { 
-  UserCheck, 
-  MapPin, 
-  Sparkles, 
-  ShieldAlert, 
-  BookOpen, 
-  Leaf, 
-  ArrowRight,
-  CheckCircle,
-  Clock,
-  Compass,
-  FileText,
-  AlertTriangle
+  UserCheck, MapPin, Sparkles, ShieldAlert, BookOpen, Leaf, ArrowRight,
+  CheckCircle, Clock, Compass, FileText, AlertTriangle, ShieldCheck, Plus, Trash2, Edit2, CheckCircle2, Award, Eye, XCircle
 } from "lucide-react";
 import { useAuthStore } from "../../store/auth-store";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1";
+interface Category { id: string; name: string; slug: string; }
+interface District { id: string; name: string; }
+
+interface CreatorPlace {
+  id: string;
+  name: string;
+  shortDescription: string;
+  fullDescription: string;
+  districtId: string;
+  categoryId: string;
+  district: { name: string };
+  category: { name: string; slug: string };
+  latitude: number;
+  longitude: number;
+  status: string; // DRAFT | SUBMITTED | UNDER_REVIEW | PUBLISHED | REJECTED
+  verified: boolean;
+  bestSeason?: string;
+  address?: string;
+  heroImage?: string;
+  featuredImage?: string;
+}
 
 export default function CreatorStudio() {
   const { user, token } = useAuthStore();
   const coverInputRef = useRef<HTMLInputElement>(null);
-  const galleryInputRef = useRef<HTMLInputElement>(null);
 
-  // Verification states
+  // Dashboard configuration
+  const [activeSubTab, setActiveSubTab] = useState<"overview" | "add_place" | "my_places" | "add_story">("overview");
+
+  // Verification/profile states
   const [isVerified, setIsVerified] = useState(false);
   const [creatorType, setCreatorType] = useState("influencer");
   const [isVerifying, setIsVerifying] = useState(false);
@@ -33,88 +45,44 @@ export default function CreatorStudio() {
   const [socialHandle, setSocialHandle] = useState("");
   const [bio, setBio] = useState("");
 
-  // Place form states
-  const [placeName, setPlaceName] = useState("");
-  const [tagline, setTagline] = useState("");
-  const [district, setDistrict] = useState("Bastar");
-  const [category, setCategory] = useState("waterfalls");
-  const [description, setDescription] = useState("");
-  const [bestSeason, setBestSeason] = useState("");
-  
-  // Coordinates
-  const [mapX, setMapX] = useState("50");
-  const [mapY, setMapY] = useState("50");
-  
-  // Tourism & Safety info
-  const [respectRule, setRespectRule] = useState("");
-  const [safetyAlert, setSafetyAlert] = useState("");
-  const [requiredGear, setRequiredGear] = useState("");
-  
-  // Cultural lore
-  const [folklore, setFolklore] = useState("");
-  const [tribalRelevance, setTribalRelevance] = useState("");
-
-  // Media upload states
-  const [coverUploading, setCoverUploading] = useState(false);
-  const [coverUrl, setCoverUrl] = useState("");
-  const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
-  const [galleryUploading, setGalleryUploading] = useState(false);
-
-  // ── Strict TypeScript interfaces (replaces `any`) ──────────────────────────
-  interface SubmittedPlace {
-    id: string;
-    name: string;
-    tagline: string;
-    district: string;
-    category: string;
-    story: string;
-    rating: number;
-    biodiversityScore: number;
-    bestTime: string;
-    safety: string;
-    localInsights: string;
-    rules: string[];
-    status?: string;
-    coordinates?: {
-      x: number;
-      y: number;
-      mapX: number;
-      mapY: number;
-    };
-  }
-
-  interface Category {
-    id: string;
-    name: string;
-    slug: string;
-  }
-
-  interface PlaceResponse {
-    id: string;
-    name: string;
-    description?: string;
-    district: string;
-    category?: { slug: string };
-    history?: string;
-    bestSeason?: string;
-    safetyInfo?: string;
-    rules?: string;
-    verified?: boolean;
-    longitude?: number;
-    latitude?: number;
-  }
-
-  interface ApiError {
-    message?: string;
-  }
-
-  const [submittedPlaces, setSubmittedPlaces] = useState<SubmittedPlace[]>([]);
-  const [formSuccess, setFormSuccess] = useState(false);
-
-  // Categories & Staging loads
+  // Categories & Districts
   const [categories, setCategories] = useState<Category[]>([]);
+  const [districts, setDistricts] = useState<District[]>([]);
+  const [submittedPlaces, setSubmittedPlaces] = useState<CreatorPlace[]>([]);
   const [profileLoading, setProfileLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
+  const [formSuccess, setFormSuccess] = useState(false);
+
+  // Form states for creating/editing
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [placeName, setPlaceName] = useState("");
+  const [shortDesc, setShortDesc] = useState("");
+  const [fullDesc, setFullDesc] = useState("");
+  const [selectedDistrictId, setSelectedDistrictId] = useState("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
+  const [latitude, setLatitude] = useState("");
+  const [longitude, setLongitude] = useState("");
+  const [bestSeason, setBestSeason] = useState("");
+  const [address, setAddress] = useState("");
+  const [featuredImage, setFeaturedImage] = useState("");
+  const [formStatus, setFormStatus] = useState("SUBMITTED"); // SUBMITTED or DRAFT
+
+  // Stories creation states
+  const [allPlaces, setAllPlaces] = useState<any[]>([]);
+  const [composerPlaceId, setComposerPlaceId] = useState("");
+  const [storyTitle, setStoryTitle] = useState("");
+  const [storyDesc, setStoryDesc] = useState("");
+  const [storyLanguage, setStoryLanguage] = useState("Hindi");
+  const [storyVisibility, setStoryVisibility] = useState("PUBLIC");
+  
+  // Media suggestions and checked status
+  const [availableMedia, setAvailableMedia] = useState<any[]>([]);
+  const [checkedMediaIds, setCheckedMediaIds] = useState<string[]>([]);
+  const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
+  const [isDrafting, setIsDrafting] = useState(false);
+  const [storySuccess, setStorySuccess] = useState(false);
+
+  const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1";
 
   // Sync session and fetch initial states
   useEffect(() => {
@@ -135,15 +103,22 @@ export default function CreatorStudio() {
         if (catRes.ok && active) {
           const catData = await catRes.json();
           setCategories(catData);
-          if (catData.length > 0) {
-            setCategory(catData[0].slug);
-          }
+          if (catData.length > 0) setSelectedCategoryId(catData[0].id);
         }
 
-        // 2. Fetch Profile details to discover Registry upgrades
+        // 2. Fetch Districts
+        const distRes = await fetch(`${API}/places/districts`);
+        if (distRes.ok && active) {
+          const distData = await distRes.json();
+          setDistricts(distData);
+          if (distData.length > 0) setSelectedDistrictId(distData[0].id);
+        }
+
+        // 3. Fetch Profile details to discover Registry upgrades
         const profileRes = await fetch(`${API}/users/me`, {
           headers: {
-            "x-user-id": user?.id || ""
+            "x-user-id": user?.id || "",
+            "Authorization": `Bearer ${token}`
           }
         });
         if (profileRes.ok && active) {
@@ -159,41 +134,26 @@ export default function CreatorStudio() {
           }
         }
 
-        // 3. Fetch Places submissions (including unverified staged coordinates)
+        // 4. Fetch Places submissions for creator
         const placesRes = await fetch(`${API}/places?includeUnverified=true`);
         if (placesRes.ok && active) {
           const placesData = await placesRes.json();
-          
-          const mapped = placesData.map((p: PlaceResponse) => ({
-            id: p.id,
-            name: p.name,
-            tagline: p.description || "A hidden marvel of nature",
-            district: p.district,
-            category: p.category?.slug || "waterfalls",
-            story: p.history || p.description,
-            rating: 4.8,
-            biodiversityScore: 85,
-            bestTime: p.bestSeason || "October to March",
-            safety: p.safetyInfo || "Standard forest rules apply.",
-            localInsights: p.history || "Oral tradition preservation stage.",
-            rules: p.rules ? [p.rules] : ["Respect local guidelines"],
-            status: p.verified ? "approved" : "pending",
-            coordinates: {
-              x: p.longitude || 81.5,
-              y: p.latitude || 19.5,
-              mapX: p.longitude ? Math.round(((p.longitude - 80.25) / (84.40 - 80.25)) * 100) : 50,
-              mapY: p.latitude ? Math.round(((24.08 - p.latitude) / (24.08 - 17.78)) * 100) : 50
-            }
-          }));
-          setSubmittedPlaces(mapped);
+          // Filter to show only own places if Creator role
+          const creatorOnlyPlaces = placesData.filter((p: any) => p.creatorId === user?.id);
+          setSubmittedPlaces(creatorOnlyPlaces);
         }
-      } catch (err: unknown) {
-        const e = err as ApiError;
-        console.error("Failed to load contributor dashboard:", e?.message || err);
+
+        // 5. Fetch all verified places for story composer dropdown
+        const allPlacesRes = await fetch(`${API}/places`);
+        if (allPlacesRes.ok && active) {
+          const allPlacesData = await allPlacesRes.json();
+          setAllPlaces(allPlacesData);
+          if (allPlacesData.length > 0) setComposerPlaceId(allPlacesData[0].id);
+        }
+      } catch (err: any) {
+        console.error("Failed to load contributor dashboard:", err);
       } finally {
-        if (active) {
-          setProfileLoading(false);
-        }
+        if (active) setProfileLoading(false);
       }
     }
 
@@ -202,16 +162,157 @@ export default function CreatorStudio() {
     return () => {
       active = false;
     };
-  }, [user]);
+  }, [user, token, API]);
 
-  // Handle Cover image file upload
-  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !token) return;
+  const handleGetLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((pos) => {
+        setLatitude(pos.coords.latitude.toString());
+        setLongitude(pos.coords.longitude.toString());
+      });
+    }
+  };
 
-    setCoverUploading(true);
+  // Fetch media library suggestions when place selection changes
+  useEffect(() => {
+    if (!composerPlaceId) return;
+
+    const fetchSuggestions = async () => {
+      try {
+        const res = await fetch(`${API}/media-library/suggestions?placeId=${composerPlaceId}`);
+        if (res.ok) {
+          const data = await res.json();
+          setAvailableMedia(data.media || []);
+          setSuggestedTags(data.tags || []);
+          // Pre-select all available media items by default
+          setCheckedMediaIds(data.media ? data.media.map((m: any) => m.id) : []);
+        }
+      } catch (e) {
+        console.error("Failed to load media suggestions", e);
+      }
+    };
+    fetchSuggestions();
+  }, [composerPlaceId, API]);
+
+  const handleGenerateAIDraft = async () => {
+    if (!composerPlaceId) return;
+    setIsDrafting(true);
+    try {
+      const res = await fetch(`${API}/media-library/auto-draft?placeId=${composerPlaceId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setStoryTitle(data.draft.title);
+        setStoryDesc(data.draft.description);
+        if (data.draft.tags) {
+          setSuggestedTags(data.draft.tags);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to compile AI draft story", e);
+      alert("API timeout. Fallback to basic templated layout completed.");
+    } finally {
+      setIsDrafting(false);
+    }
+  };
+
+  const handleStorySubmission = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!storyTitle || !storyDesc || !composerPlaceId) {
+      alert("Please enter title and narrative content.");
+      return;
+    }
+
+    const selectedMedia = availableMedia
+      .filter((m: any) => checkedMediaIds.includes(m.id))
+      .map((m: any) => ({
+        type: m.mediaType,
+        url: m.filePath,
+        thumbnailUrl: m.thumbnail || m.filePath,
+      }));
+
+    const coverImage = selectedMedia.find(m => m.type === "image")?.url || "/chitrakote.png";
+    const videoUrl = selectedMedia.find(m => m.type === "video")?.url || null;
+
+    const payload = {
+      title: storyTitle,
+      description: storyDesc,
+      placeId: composerPlaceId,
+      districtId: allPlaces.find(p => p.id === composerPlaceId)?.districtId || null,
+      categoryId: allPlaces.find(p => p.id === composerPlaceId)?.categoryId || null,
+      language: storyLanguage,
+      visibility: storyVisibility,
+      coverImage,
+      videoUrl,
+      media: selectedMedia,
+    };
+
+    try {
+      const res = await fetch(`${API}/stories`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.message || "Failed to save story.");
+      }
+
+      setStorySuccess(true);
+      setStoryTitle("");
+      setStoryDesc("");
+      setCheckedMediaIds([]);
+      setTimeout(() => {
+        setStorySuccess(false);
+        setActiveSubTab("overview");
+      }, 2000);
+    } catch (err: any) {
+      alert(err.message || "Error submitting story.");
+    }
+  };
+
+  const startEdit = (place: CreatorPlace) => {
+    setEditingId(place.id);
+    setPlaceName(place.name);
+    setShortDesc(place.shortDescription || "");
+    setFullDesc(place.fullDescription || "");
+    setSelectedDistrictId(place.districtId);
+    setSelectedCategoryId(place.categoryId);
+    setLatitude(place.latitude.toString());
+    setLongitude(place.longitude.toString());
+    setBestSeason(place.bestSeason || "");
+    setAddress(place.address || "");
+    setFeaturedImage(place.heroImage || place.featuredImage || "");
+    setFormStatus(place.status);
+    setActiveSubTab("add_place");
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    resetForm();
+    setActiveSubTab("overview");
+  };
+
+  const resetForm = () => {
+    setPlaceName("");
+    setShortDesc("");
+    setFullDesc("");
+    setLatitude("");
+    setLongitude("");
+    setBestSeason("");
+    setAddress("");
+    setFeaturedImage("");
+    setFormStatus("SUBMITTED");
+    setEditingId(null);
+  };
+
+  const handleFileUpload = async (file: File, folder: string = "places"): Promise<string | null> => {
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("folder", folder);
 
     try {
       const res = await fetch(`${API}/storage/upload`, {
@@ -221,77 +322,87 @@ export default function CreatorStudio() {
         },
         body: formData
       });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        return data.url;
+      } else {
+        console.error("Upload failed", data.message);
+        alert(data.message || "Failed to upload file.");
+        return null;
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Error occurred during file upload.");
+      return null;
+    }
+  };
+
+  const handlePlaceSubmission = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!placeName || !shortDesc || !selectedCategoryId || !selectedDistrictId) return;
+
+    const payload = {
+      name: placeName,
+      shortDescription: shortDesc,
+      fullDescription: fullDesc,
+      categoryId: selectedCategoryId,
+      districtId: selectedDistrictId,
+      latitude: parseFloat(latitude) || 19.5,
+      longitude: parseFloat(longitude) || 81.5,
+      bestSeason: bestSeason || "October to March",
+      address: address || "",
+      featuredImage: featuredImage || "/chitrakote.png",
+      status: formStatus,
+    };
+
+    try {
+      const url = editingId ? `${API}/places/${editingId}` : `${API}/places`;
+      const method = editingId ? "PATCH" : "POST";
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
 
       if (!res.ok) {
         const errData = await res.json();
-        throw new Error(errData.message || "Failed to upload cover image.");
+        throw new Error(errData.message || "Submission failed");
       }
 
-      const data = await res.json();
-      const finalUrl = data.url.startsWith("/") ? `http://localhost:4000${data.url}` : data.url;
-      setCoverUrl(finalUrl);
-    } catch (err: unknown) {
-      const e = err as ApiError;
-      alert(e?.message || "Error uploading cover image.");
-    } finally {
-      setCoverUploading(false);
+      const savedPlace = await res.json();
+
+      if (editingId) {
+        setSubmittedPlaces(submittedPlaces.map(p => p.id === editingId ? savedPlace : p));
+      } else {
+        setSubmittedPlaces([savedPlace, ...submittedPlaces]);
+      }
+
+      setFormSuccess(true);
+      resetForm();
+      setTimeout(() => {
+        setFormSuccess(false);
+        setActiveSubTab("overview");
+      }, 2000);
+    } catch (err: any) {
+      alert(err.message || "Error submitting coordinates.");
     }
   };
 
-  // Handle Showcase gallery file uploads
-  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0 || !token) return;
-
-    setGalleryUploading(true);
-    const uploadedUrls: string[] = [];
-
-    try {
-      for (let i = 0; i < files.length; i++) {
-        const formData = new FormData();
-        formData.append("file", files[i]);
-
-        const res = await fetch(`${API}/storage/upload`, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${token}`
-          },
-          body: formData
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          const finalUrl = data.url.startsWith("/") ? `http://localhost:4000${data.url}` : data.url;
-          uploadedUrls.push(finalUrl);
-        }
-      }
-
-      setGalleryUrls((prev) => [...prev, ...uploadedUrls]);
-    } catch (err: unknown) {
-      void err;
-      alert("Error uploading gallery media.");
-    } finally {
-      setGalleryUploading(false);
-    }
-  };
-
-  const removeGalleryUrl = (urlToRemove: string) => {
-    setGalleryUrls((prev) => prev.filter(url => url !== urlToRemove));
-  };
-
-  // Handle Registry upgrading via POST API
   const handleRealVerification = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!socialHandle || !user) return;
 
     setIsVerifying(true);
-    setVerificationProgress(10);
+    setVerificationProgress(15);
     setErrorMsg("");
 
-    // Graphical loading progress ticks
     const progressInterval = setInterval(() => {
-      setVerificationProgress((prev) => Math.min(prev + 18, 90));
-    }, 120);
+      setVerificationProgress((prev) => Math.min(prev + 20, 95));
+    }, 100);
 
     try {
       const payload = {
@@ -304,7 +415,8 @@ export default function CreatorStudio() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": user?.id || ""
+          "x-user-id": user.id,
+          "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify(payload)
       });
@@ -313,144 +425,34 @@ export default function CreatorStudio() {
       setVerificationProgress(100);
 
       if (!res.ok) {
-        const errData: ApiError = await res.json();
+        const errData = await res.json();
         throw new Error(errData.message || "Credential linkage rejected.");
       }
 
       setIsVerified(true);
-    } catch (err: unknown) {
-      const e = err as ApiError;
-      setErrorMsg(e?.message || "Registry request rejected. Ensure bio is 10-300 characters.");
+    } catch (err: any) {
+      setErrorMsg(err.message || "Registry request rejected. Ensure bio is 10-300 characters.");
       setVerificationProgress(0);
     } finally {
       setIsVerifying(false);
     }
   };
 
-  // Submit new Place to NestJS backend moderation pipeline
-  const handlePlaceSubmission = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!placeName || !description) return;
-
-    const selectedCategory = categories.find(c => c.slug === category);
-    const categoryId = selectedCategory ? selectedCategory.id : (categories[0]?.id || "waterfalls");
-
-    const parsedX = parseFloat(mapX) || 50;
-    const parsedY = parseFloat(mapY) || 50;
-    
-    // Geographical bounds translation: 17.78° N to 24.08° N, 80.25° E to 84.40° E
-    const longitude = 80.25 + (parsedX / 100) * (84.40 - 80.25);
-    const latitude = 24.08 - (parsedY / 100) * (24.08 - 17.78);
-
-    let fallbackImage = "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=600&q=80";
-    if (category === "waterfalls") {
-      fallbackImage = "https://images.unsplash.com/photo-1432405972618-c60002a157c5?auto=format&fit=crop&w=600&q=80";
-    } else if (category === "temples") {
-      fallbackImage = "https://images.unsplash.com/photo-1582555172866-1c863b4a2e55?auto=format&fit=crop&w=600&q=80";
-    } else if (category === "villages") {
-      fallbackImage = "https://images.unsplash.com/photo-1514222134-b57cbb8ce073?auto=format&fit=crop&w=600&q=80";
-    }
-
-    try {
-      const payload = {
-        name: placeName,
-        description: tagline || description.slice(0, 100),
-        district: district,
-        categoryId: categoryId,
-        latitude: latitude,
-        longitude: longitude,
-        heroImage: coverUrl || fallbackImage,
-        bestSeason: bestSeason || "October to March",
-        history: folklore || description,
-        safetyInfo: safetyAlert || "Respect standard coordinates guidelines.",
-        rules: respectRule || "Littering is strictly prohibited.",
-        mediaUrls: galleryUrls
-      };
-
-      const res = await fetch(`${API}/places`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!res.ok) {
-        const errData: ApiError = await res.json();
-        throw new Error(errData.message || "Coordinate submission failed.");
-      }
-
-      const created: PlaceResponse = await res.json();
-
-      const newPlace: SubmittedPlace = {
-        id: created.id,
-        name: created.name,
-        tagline: created.description || "A hidden marvel of nature",
-        district: created.district,
-        category: category,
-        story: created.history || created.description || "",
-        rating: 4.8,
-        biodiversityScore: 88,
-        bestTime: created.bestSeason || "October to March",
-        safety: created.safetyInfo || "Precautions recommended.",
-        localInsights: created.history || "Tribal relevance oral tradition.",
-        rules: created.rules ? [created.rules] : ["Respect custom guidelines"],
-        status: "pending",
-        coordinates: {
-          x: longitude,
-          y: latitude,
-          mapX: parsedX,
-          mapY: parsedY
-        }
-      };
-
-      setSubmittedPlaces((prev) => [newPlace, ...prev]);
-      setFormSuccess(true);
-
-      // Reset coordinates form states
-      setPlaceName("");
-      setTagline("");
-      setDescription("");
-      setBestSeason("");
-      setFolklore("");
-      setTribalRelevance("");
-      setRespectRule("");
-      setSafetyAlert("");
-      setRequiredGear("");
-      setCoverUrl("");
-      setGalleryUrls([]);
-
-      setTimeout(() => setFormSuccess(false), 4000);
-    } catch (err: unknown) {
-      const e = err as ApiError;
-      alert(e?.message || "Coordinate submission error.");
-    }
-  };
-
-  // Render Premium Login Prompter for Unauthenticated entries
+  // Auth Protection View
   if (!user) {
     return (
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 flex flex-col items-center justify-center min-h-[70vh]">
-        <div className="max-w-md w-full glass-panel p-10 rounded-3xl border border-white/60 shadow-2xl bg-white/70 flex flex-col gap-6 text-center">
-          <span className="w-16 h-16 mx-auto rounded-2xl bg-tribal-terracotta/10 text-tribal-terracotta flex items-center justify-center shadow-inner">
-            <Compass className="w-10 h-10 text-tribal-terracotta animate-pulse" />
+        <div className="max-w-md w-full glass-panel p-10 rounded-3xl border border-white/60 shadow-2xl bg-white/75 flex flex-col gap-6 text-center">
+          <span className="w-16 h-16 mx-auto rounded-2xl bg-tribal-terracotta/10 text-tribal-terracotta flex items-center justify-center shadow-inner animate-pulse">
+            <Compass className="w-10 h-10 text-tribal-terracotta" />
           </span>
           <h2 className="text-2xl font-sans font-bold text-forest-emerald mt-2">Sovereign Intelligence</h2>
           <p className="text-sm text-charcoal-stone/70 leading-relaxed">
             The Verified Contributor Studio is a secure registry reserved for local regional experts, photographers, and certified guides to contribute coordinates directly to the State Administrative Moderation Queue.
           </p>
           <div className="flex flex-col gap-3 mt-4">
-            <Link
-              href="/login?redirect=/creator"
-              className="w-full py-3.5 rounded-xl bg-forest-emerald hover:bg-emerald-800 text-white font-bold text-sm shadow-md transition-colors text-center block"
-            >
+            <Link href="/login?redirect=/creator" className="w-full py-3.5 rounded-xl bg-forest-emerald hover:bg-emerald-800 text-white font-bold text-sm shadow-md transition-colors text-center block">
               Sign In to Your Account
-            </Link>
-            <Link
-              href="/register?redirect=/creator"
-              className="w-full py-3.5 rounded-xl bg-white/80 hover:bg-white border border-charcoal-stone/15 text-charcoal-stone font-bold text-sm shadow-sm transition-colors text-center block"
-            >
-              Register as a Traveler
             </Link>
           </div>
         </div>
@@ -458,7 +460,6 @@ export default function CreatorStudio() {
     );
   }
 
-  // Render Loader spinner while profile loads
   if (profileLoading) {
     return (
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 flex flex-col items-center justify-center min-h-[70vh]">
@@ -472,25 +473,18 @@ export default function CreatorStudio() {
     );
   }
 
-  return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex flex-col gap-8 text-charcoal-stone bg-sand-beige/20 min-h-[85vh]">
-      
-      {/* Cinematic Studio Header */}
-      <div className="flex flex-col gap-2 border-b border-charcoal-stone/10 pb-6">
-        <span className="text-xs font-mono font-bold tracking-widest text-tribal-terracotta uppercase">
-          Cooperative Portal
-        </span>
-        <h1 className="text-3xl sm:text-4xl font-sans font-bold text-forest-emerald flex items-center gap-2.5">
-          <Compass className="w-9 h-9 text-tribal-terracotta animate-pulse" />
-          Verified Contributor Studio
-        </h1>
-        <p className="text-sm text-charcoal-stone/75 leading-relaxed max-w-2xl">
-          Empowering local communities, photographers, and forest experts to expand the platform&apos;s geographic footprint organically while respecting tribal sovereignty.
-        </p>
-      </div>
+  // Not Verified View: Registration Screen
+  if (!isVerified) {
+    return (
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex flex-col gap-8 text-charcoal-stone min-h-[85vh]">
+        <div className="flex flex-col gap-2 border-b border-charcoal-stone/10 pb-6">
+          <span className="text-xs font-mono font-bold tracking-widest text-tribal-terracotta uppercase">Cooperative Registry</span>
+          <h1 className="text-3xl sm:text-4xl font-sans font-bold text-forest-emerald flex items-center gap-2.5">
+            <Compass className="w-9 h-9 text-tribal-terracotta animate-pulse" />
+            Verified Contributor Studio
+          </h1>
+        </div>
 
-      {!isVerified ? (
-        /* STEP 1: SOCIAL NETWORK VERIFICATION SCREEN */
         <div className="max-w-xl mx-auto w-full glass-panel p-8 rounded-3xl border border-white/60 shadow-xl bg-white/70 flex flex-col gap-6">
           <div className="text-center flex flex-col items-center gap-2">
             <span className="w-14 h-14 rounded-2xl bg-tribal-terracotta/10 text-tribal-terracotta flex items-center justify-center shadow-inner">
@@ -522,9 +516,7 @@ export default function CreatorStudio() {
                   { id: "ngo", name: "Eco Guardian NGO" }
                 ].map((type) => (
                   <button
-                    key={type.id}
-                    type="button"
-                    onClick={() => setCreatorType(type.id)}
+                    key={type.id} type="button" onClick={() => setCreatorType(type.id)}
                     className={`text-xs p-3 rounded-xl border font-sans font-bold transition-all text-center cursor-pointer ${
                       creatorType === type.id
                         ? "bg-forest-emerald border-transparent text-sand-beige shadow-md"
@@ -539,58 +531,30 @@ export default function CreatorStudio() {
 
             <div className="flex flex-col gap-1.5">
               <label className="text-[10px] font-mono font-bold text-charcoal-stone/60 uppercase">Primary Social Link / ID</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="e.g. wanderer_bastar or CG_G0284"
-                  value={socialHandle}
-                  onChange={(e) => setSocialHandle(e.target.value)}
-                  className="w-full pl-4 pr-12 py-3 rounded-xl bg-white border border-charcoal-stone/15 text-sm focus:outline-none focus:border-forest-emerald font-sans text-charcoal-stone font-semibold"
-                  required
-                />
-                <div className="absolute right-3.5 top-3.5 flex gap-2.5 text-charcoal-stone/40">
-                  {/* Instagram Inline SVG */}
-                  <svg className="w-4 h-4 hover:text-pink-600 cursor-pointer" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-                  </svg>
-                  {/* Youtube Inline SVG */}
-                  <svg className="w-4 h-4 hover:text-red-600 cursor-pointer" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.41 19c1.71.46 8.59.46 8.59.46s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96 29 29 0 0 0 .46-5.33 29 29 0 0 0-.46-5.33z"></path>
-                    <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon>
-                  </svg>
-                  {/* Twitter Inline SVG */}
-                  <svg className="w-4 h-4 hover:text-sky-500 cursor-pointer" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path>
-                  </svg>
-                </div>
-              </div>
+              <input
+                type="text" placeholder="e.g. wanderer_bastar or CG_G0284"
+                value={socialHandle} onChange={(e) => setSocialHandle(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl bg-white border border-charcoal-stone/15 text-sm focus:outline-none focus:border-forest-emerald font-sans text-charcoal-stone font-semibold"
+                required
+              />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <div className="flex justify-between items-center">
-                <label className="text-[10px] font-mono font-bold text-charcoal-stone/60 uppercase">Professional Statement / Bio</label>
-                <span className="text-[9px] font-mono text-charcoal-stone/45">{bio.length}/300 chars</span>
-              </div>
+              <label className="text-[10px] font-mono font-bold text-charcoal-stone/60 uppercase">Professional Statement / Bio</label>
               <textarea
                 placeholder="Share your regional credentials and local area knowledge (10-300 characters)..."
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                rows={3}
-                minLength={10}
-                maxLength={300}
+                value={bio} onChange={(e) => setBio(e.target.value)}
+                rows={3} minLength={10} maxLength={300}
                 className="w-full px-4 py-3 rounded-xl bg-white border border-charcoal-stone/15 text-sm focus:outline-none focus:border-forest-emerald font-sans text-charcoal-stone font-semibold"
                 required
               />
             </div>
 
             <button
-              type="submit"
-              disabled={isVerifying}
+              type="submit" disabled={isVerifying}
               className="w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-xl bg-tribal-terracotta hover:bg-warm-orange text-white text-sm font-bold font-sans transition-colors cursor-pointer disabled:opacity-50"
             >
-              {isVerifying ? "Verifying Social Registry..." : "Verify Identity"}
+              {isVerifying ? "Verifying Registry..." : "Verify Identity"}
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
@@ -598,379 +562,590 @@ export default function CreatorStudio() {
           {isVerifying && (
             <div className="flex flex-col gap-1.5 mt-2">
               <div className="w-full h-2 rounded-full bg-charcoal-stone/10 overflow-hidden">
-                <div 
-                  className="h-full bg-forest-emerald transition-all duration-300"
-                  style={{ width: `${verificationProgress}%` }}
-                ></div>
+                <div className="h-full bg-forest-emerald transition-all duration-300" style={{ width: `${verificationProgress}%` }}></div>
               </div>
               <span className="text-[9px] font-mono text-charcoal-stone/50 text-right">API Check: {verificationProgress}%</span>
             </div>
           )}
         </div>
-      ) : (
-        /* STEP 2: VERIFIED PLACE CONTRIBUTION WIZARD */
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* PLACE SUBMISSION FORM CARD */}
-          <div className="lg:col-span-2 glass-panel p-6 sm:p-8 rounded-3xl border border-white/60 shadow-xl bg-white/70 flex flex-col gap-6">
-            
-            <div className="flex items-center justify-between border-b border-charcoal-stone/5 pb-4">
-              <div className="flex items-center gap-2.5">
-                <span className="w-10 h-10 rounded-xl bg-forest-emerald/10 text-forest-emerald flex items-center justify-center">
-                  <Sparkles className="w-5 h-5" />
-                </span>
-                <div className="flex flex-col">
-                  <h2 className="text-lg font-sans font-bold text-forest-emerald">Add New Coordinates</h2>
-                  <span className="text-[10px] font-mono text-charcoal-stone/50 uppercase">Creator: @{socialHandle} ({creatorType})</span>
-                </div>
-              </div>
-              <span className="text-[10px] font-mono bg-green-100 text-green-700 font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
-                Verifications Active
-              </span>
+      </div>
+    );
+  }
+
+  // Active verified places variables for metrics
+  const publishedCount = submittedPlaces.filter(p => p.status === 'PUBLISHED').length;
+  const pendingCount = submittedPlaces.filter(p => p.status === 'SUBMITTED' || p.status === 'UNDER_REVIEW').length;
+  const rejectedCount = submittedPlaces.filter(p => p.status === 'REJECTED').length;
+  const draftCount = submittedPlaces.filter(p => p.status === 'DRAFT').length;
+
+  return (
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex flex-col gap-8 text-charcoal-stone min-h-[85vh]">
+      
+      {/* Cinematic Studio Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 border-b border-charcoal-stone/10 pb-6">
+        <div className="flex flex-col gap-2">
+          <span className="text-xs font-mono font-bold tracking-widest text-tribal-terracotta uppercase">Cooperative Portal</span>
+          <h1 className="text-3xl sm:text-4xl font-sans font-bold text-forest-emerald flex items-center gap-2.5">
+            <Compass className="w-9 h-9 text-tribal-terracotta" />
+            Creator command center
+          </h1>
+          <p className="text-xs text-charcoal-stone/75 leading-relaxed max-w-xl">
+            Logged in as <strong className="text-tribal-terracotta">@{socialHandle}</strong>. Publish draft travel logs and contribute coordinate metadata to the State discovery engines.
+          </p>
+        </div>
+
+        {/* Global Statistics (Creator stats) */}
+        <div className="flex gap-2.5 shrink-0 flex-wrap">
+          <div className="px-3.5 py-2.5 rounded-xl bg-white border border-charcoal-stone/10 shadow-sm flex flex-col items-center">
+            <span className="text-[9px] font-mono text-charcoal-stone/40 uppercase">Contributions</span>
+            <span className="text-base font-bold text-forest-emerald">{submittedPlaces.length}</span>
+          </div>
+          <div className="px-3.5 py-2.5 rounded-xl bg-white border border-charcoal-stone/10 shadow-sm flex flex-col items-center">
+            <span className="text-[9px] font-mono text-charcoal-stone/40 uppercase">Published</span>
+            <span className="text-base font-bold text-green-600">{publishedCount}</span>
+          </div>
+          <div className="px-3.5 py-2.5 rounded-xl bg-white border border-charcoal-stone/10 shadow-sm flex flex-col items-center">
+            <span className="text-[9px] font-mono text-charcoal-stone/40 uppercase">Pending Review</span>
+            <span className="text-base font-bold text-amber-600">{pendingCount}</span>
+          </div>
+          {rejectedCount > 0 && (
+            <div className="px-3.5 py-2.5 rounded-xl bg-white border border-red-100 shadow-sm flex flex-col items-center">
+              <span className="text-[9px] font-mono text-charcoal-stone/40 uppercase">Changes Needed</span>
+              <span className="text-base font-bold text-red-600">{rejectedCount}</span>
             </div>
+          )}
+        </div>
+      </div>
 
-            {formSuccess && (
-              <div className="p-4 rounded-xl bg-green-50 border border-green-200 flex items-center gap-3 text-green-800 text-xs font-sans animate-fade-in shadow-inner">
-                <CheckCircle className="w-5 h-5 shrink-0 text-green-600" />
-                <div className="flex flex-col">
-                  <span className="font-bold">Place Dispatch Complete!</span>
-                  <span>Sent directly to the State Administrative Moderation Queue. Review status below.</span>
-                </div>
-              </div>
-            )}
+      {/* Tabs */}
+      <div className="flex border-b border-charcoal-stone/10 gap-2 overflow-x-auto pb-1">
+        {[
+          { id: "overview", label: "Dashboard Overview", icon: Compass },
+          { id: "add_place", label: editingId ? "Edit Destination" : "Add New Place", icon: Plus },
+          { id: "my_places", label: `My Submissions (${submittedPlaces.length})`, icon: FileText },
+          { id: "add_story", label: "✨ Compose Story", icon: Sparkles }
+        ].map((subTab) => {
+          const Icon = subTab.icon;
+          return (
+            <button
+              key={subTab.id} onClick={() => setActiveSubTab(subTab.id as any)}
+              className={`flex items-center gap-2 text-sm font-sans font-bold px-4 py-3 border-b-2 cursor-pointer transition-all shrink-0 ${
+                activeSubTab === subTab.id
+                  ? "border-tribal-terracotta text-tribal-terracotta"
+                  : "border-transparent text-charcoal-stone/60 hover:text-forest-emerald"
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              {subTab.label}
+            </button>
+          );
+        })}
+      </div>
 
-            <form onSubmit={handlePlaceSubmission} className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-xs">
-              
-              {/* Part 1: Basic Info */}
-              <div className="flex flex-col gap-1">
-                <label className="font-bold text-charcoal-stone/75">Location Name</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Kawardha Gorge Viewpoint"
-                  value={placeName}
-                  onChange={(e) => setPlaceName(e.target.value)}
-                  className="p-3 rounded-xl bg-white border border-charcoal-stone/15 font-semibold text-charcoal-stone focus:outline-none"
-                  required
-                />
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="font-bold text-charcoal-stone/75">One-line Tagline</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Pristine green gap between peaks"
-                  value={tagline}
-                  onChange={(e) => setTagline(e.target.value)}
-                  className="p-3 rounded-xl bg-white border border-charcoal-stone/15 font-semibold text-charcoal-stone focus:outline-none"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="font-bold text-charcoal-stone/75">District</label>
-                <select
-                  value={district}
-                  onChange={(e) => setDistrict(e.target.value)}
-                  className="p-3 rounded-xl bg-white border border-charcoal-stone/15 font-semibold text-charcoal-stone focus:outline-none"
+      {/* VIEW 1: Dashboard Overview */}
+      {activeSubTab === "overview" && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+          
+          {/* Main overview metrics */}
+          <div className="lg:col-span-2 flex flex-col gap-6">
+            
+            {/* Verification & Welcome banner */}
+            <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-white/60 bg-white/70 flex flex-col gap-4">
+              <h3 className="font-sans font-bold text-lg text-forest-emerald">Welcome back, Guardian!</h3>
+              <p className="text-sm leading-relaxed text-charcoal-stone/80">
+                Your profiles are linked to the Chhattisgarhi community tourism network. Standard users look for your verified guides and drone footage overlays when planning itineraries. Maintain standard code respect limits when cataloging.
+              </p>
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setActiveSubTab("add_place")}
+                  className="px-4 py-2 rounded-xl bg-forest-emerald hover:bg-emerald-800 text-white font-sans font-bold text-xs flex items-center gap-1.5 shadow transition-all"
                 >
-                  <option value="Bastar">Bastar District</option>
-                  <option value="Kabirdham">Kabirdham District</option>
-                  <option value="Sarguja">Sarguja District</option>
-                  <option value="Dhamtari">Dhamtari District</option>
-                  <option value="Raipur">Raipur District</option>
-                  <option value="Kawardha">Kawardha District</option>
-                  <option value="Sakti">Sakti District</option>
-                  <option value="Bilaspur">Bilaspur District</option>
-                </select>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="font-bold text-charcoal-stone/75">Experience Category</label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="p-3 rounded-xl bg-white border border-charcoal-stone/15 font-semibold text-charcoal-stone focus:outline-none"
-                >
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.slug}>
-                      {cat.name}
-                    </option>
-                  ))}
-                  {categories.length === 0 && (
-                    <>
-                      <option value="waterfalls">Waterfalls</option>
-                      <option value="forests">Forest Canopy</option>
-                      <option value="temples">Temples & Ruins</option>
-                      <option value="villages">Tribal Villages</option>
-                    </>
-                  )}
-                </select>
-              </div>
-
-              {/* Coordinates Mapping */}
-              <div className="flex flex-col gap-1">
-                <label className="font-bold text-charcoal-stone/75">Vector Map X Coordinate (0-100%)</label>
-                <input
-                  type="number"
-                  placeholder="e.g. 52"
-                  value={mapX}
-                  onChange={(e) => setMapX(e.target.value)}
-                  min="0"
-                  max="100"
-                  className="p-3 rounded-xl bg-white border border-charcoal-stone/15 font-semibold text-charcoal-stone focus:outline-none"
-                  required
-                />
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="font-bold text-charcoal-stone/75">Vector Map Y Coordinate (0-100%)</label>
-                <input
-                  type="number"
-                  placeholder="e.g. 38"
-                  value={mapY}
-                  onChange={(e) => setMapY(e.target.value)}
-                  min="0"
-                  max="100"
-                  className="p-3 rounded-xl bg-white border border-charcoal-stone/15 font-semibold text-charcoal-stone focus:outline-none"
-                  required
-                />
-              </div>
-
-              <div className="flex flex-col gap-1 sm:col-span-2">
-                <label className="font-bold text-charcoal-stone/75">Story overview / description</label>
-                <textarea
-                  placeholder="Describe the site overview, travel access path, and geographic relevance..."
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={3}
-                  className="p-3 rounded-xl bg-white border border-charcoal-stone/15 font-sans font-medium text-charcoal-stone focus:outline-none"
-                  required
-                />
-              </div>
-
-              {/* Premium Media Hub */}
-              <div className="flex flex-col gap-1 sm:col-span-2 border-t border-charcoal-stone/5 pt-4">
-                <span className="text-[10px] font-mono text-tribal-terracotta font-bold uppercase tracking-wider mb-2">Premium Media Hub</span>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Cover Upload Dropzone Card */}
-                  <div className="flex flex-col gap-2">
-                    <div 
-                      onClick={() => coverInputRef.current?.click()}
-                      className="p-6 rounded-2xl border border-dashed border-forest-emerald/30 hover:border-forest-emerald/60 bg-white/40 hover:bg-white/60 transition-all flex flex-col items-center justify-center gap-3 cursor-pointer group text-center shadow-sm"
-                    >
-                      <span className="text-2xl group-hover:scale-110 transition-transform select-none">📸</span>
-                      <div className="flex flex-col gap-0.5">
-                        <span className="font-bold text-charcoal-stone text-xs">Primary Location Cover</span>
-                        <span className="text-[9px] text-charcoal-stone/50 font-medium">Click to select hero cover image</span>
-                      </div>
-                      <input 
-                        type="file" 
-                        ref={coverInputRef}
-                        accept="image/*" 
-                        onChange={handleCoverUpload}
-                        disabled={coverUploading}
-                        className="hidden" 
-                      />
-                    </div>
-                    
-                    {coverUploading && (
-                      <span className="text-[10px] text-forest-emerald font-mono animate-pulse">Uploading cover media...</span>
-                    )}
-
-                    {coverUrl && (
-                      <div className="relative w-full h-32 rounded-xl overflow-hidden border border-charcoal-stone/10 mt-1 shadow-sm bg-black">
-                        <img 
-                          src={coverUrl} 
-                          alt="Cover Preview" 
-                          className="w-full h-full object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setCoverUrl("")}
-                          className="absolute top-2 right-2 px-2.5 py-1.5 bg-black/70 hover:bg-black text-white rounded-lg text-[9px] font-bold transition-all shadow-md cursor-pointer"
-                        >
-                          Remove Image
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Gallery Multi-Upload Dropzone Card */}
-                  <div className="flex flex-col gap-2">
-                    <div 
-                      onClick={() => galleryInputRef.current?.click()}
-                      className="p-6 rounded-2xl border border-dashed border-tribal-terracotta/30 hover:border-tribal-terracotta/60 bg-white/40 hover:bg-white/60 transition-all flex flex-col items-center justify-center gap-3 cursor-pointer group text-center shadow-sm"
-                    >
-                      <span className="text-2xl group-hover:scale-110 transition-transform select-none">🎥</span>
-                      <div className="flex flex-col gap-0.5">
-                        <span className="font-bold text-charcoal-stone text-xs">Showcase Gallery</span>
-                        <span className="text-[9px] text-charcoal-stone/50 font-medium">Click to select multiple images & videos</span>
-                      </div>
-                      <input 
-                        type="file" 
-                        ref={galleryInputRef}
-                        accept="image/*,video/*" 
-                        multiple 
-                        onChange={handleGalleryUpload}
-                        disabled={galleryUploading}
-                        className="hidden" 
-                      />
-                    </div>
-
-                    {galleryUploading && (
-                      <span className="text-[10px] text-tribal-terracotta font-mono animate-pulse">Uploading gallery files...</span>
-                    )}
-
-                    {galleryUrls.length > 0 && (
-                      <div className="grid grid-cols-3 gap-2 mt-1 max-h-32 overflow-y-auto pr-1">
-                        {galleryUrls.map((url, index) => (
-                          <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-charcoal-stone/10 shadow-sm bg-black">
-                            {url.toLowerCase().match(/\.(mp4|webm|ogg)$/) ? (
-                              <video src={url} className="w-full h-full object-cover" />
-                            ) : (
-                              <img src={url} alt="Gallery Preview" className="w-full h-full object-cover" />
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => removeGalleryUrl(url)}
-                              className="absolute top-1 right-1 p-1 bg-red-600/80 text-white rounded-full hover:bg-red-700 text-[8px] cursor-pointer"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="font-bold text-charcoal-stone/75">Peak Visiting Months / Season</label>
-                <input
-                  type="text"
-                  placeholder="e.g. October to February"
-                  value={bestSeason}
-                  onChange={(e) => setBestSeason(e.target.value)}
-                  className="p-3 rounded-xl bg-white border border-charcoal-stone/15 font-semibold text-charcoal-stone focus:outline-none"
-                />
-              </div>
-
-              {/* Part 2: Rules & Lore */}
-              <div className="flex flex-col gap-1 sm:col-span-2 border-t border-charcoal-stone/5 pt-4">
-                <span className="text-[10px] font-mono text-tribal-terracotta font-bold uppercase tracking-wider mb-2">Rules & Tribal Reverence Protocols</span>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="font-bold text-charcoal-stone/75">Respect & Eco Rule</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Ask permission before photographing the clan head"
-                  value={respectRule}
-                  onChange={(e) => setRespectRule(e.target.value)}
-                  className="p-3 rounded-xl bg-white border border-charcoal-stone/15 font-semibold text-charcoal-stone focus:outline-none"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="font-bold text-charcoal-stone/75">Live Safety Warnings</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Strict flash flood slip hazards in heavy monsoon rain"
-                  value={safetyAlert}
-                  onChange={(e) => setSafetyAlert(e.target.value)}
-                  className="p-3 rounded-xl bg-white border border-charcoal-stone/15 font-semibold text-charcoal-stone focus:outline-none"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="font-bold text-charcoal-stone/75">Folklore Story Narrative (If Any)</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Gond clan folklore of the green water nymph"
-                  value={folklore}
-                  onChange={(e) => setFolklore(e.target.value)}
-                  className="p-3 rounded-xl bg-white border border-charcoal-stone/15 font-semibold text-charcoal-stone focus:outline-none"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="font-bold text-charcoal-stone/75">Gear Checklists (Comma separated)</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Trekking shoes, Water canister, Rain cover"
-                  value={requiredGear}
-                  onChange={(e) => setRequiredGear(e.target.value)}
-                  className="p-3 rounded-xl bg-white border border-charcoal-stone/15 font-semibold text-charcoal-stone focus:outline-none"
-                />
-              </div>
-
-              <div className="sm:col-span-2 pt-4 border-t border-charcoal-stone/5 flex items-center justify-between">
-                <div className="flex gap-2 items-center text-charcoal-stone/50">
-                  <AlertTriangle className="w-4 h-4 text-amber-500 animate-bounce" />
-                  <span>Submissions are checked via AI parser prior to admin reviews.</span>
-                </div>
-                <button
-                  type="submit"
-                  className="px-8 py-3.5 rounded-xl bg-forest-emerald hover:bg-emerald-800 text-sand-beige font-bold shadow-md cursor-pointer transition-colors"
-                >
-                  Submit Coordinates
+                  <Plus className="w-4 h-4" /> Map New Destination
                 </button>
               </div>
+            </div>
 
-            </form>
+            {/* Achievement Badges */}
+            <div className="glass-panel p-6 rounded-3xl border border-white/60 bg-white/70 flex flex-col gap-4">
+              <h3 className="font-sans font-bold text-base text-forest-emerald flex items-center gap-2 border-b border-charcoal-stone/10 pb-2">
+                <Award className="w-5 h-5 text-tribal-terracotta" />
+                Achievement Badges
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
+                {[
+                  { title: "Novice Mapper", desc: "Contributed 1+ place", unlocked: submittedPlaces.length >= 1 },
+                  { title: "Eco Vanguard", desc: "Mapped wildlife zone", unlocked: submittedPlaces.some(p => p.categoryId === "forests-uuid") },
+                  { title: "Clan Chronicler", desc: "Wrote history logs", unlocked: submittedPlaces.some(p => p.fullDescription && p.fullDescription.length > 20) },
+                  { title: "Elite Scout", desc: "5+ published places", unlocked: publishedCount >= 5 }
+                ].map((badge, idx) => (
+                  <div 
+                    key={idx} 
+                    className={`p-4 rounded-2xl border flex flex-col items-center text-center gap-2 transition-all ${
+                      badge.unlocked 
+                        ? "bg-white border-forest-emerald/20 shadow-sm" 
+                        : "bg-charcoal-stone/5 border-charcoal-stone/5 opacity-50"
+                    }`}
+                  >
+                    <span className={`text-3xl ${badge.unlocked ? "grayscale-0 animate-pulse" : "grayscale"}`}>🏆</span>
+                    <span className="font-bold text-xs text-charcoal-stone">{badge.title}</span>
+                    <span className="text-[9px] text-charcoal-stone/55 leading-normal">{badge.desc}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
-          {/* CREATOR SUBMISSIONS TELEMETRY STATUS SHEET */}
+          {/* Quick status feed */}
           <div className="flex flex-col gap-6">
-            <div className="glass-panel p-6 rounded-3xl border border-white/60 shadow-xl bg-white/70 flex flex-col gap-4">
-              <h3 className="font-sans font-bold text-base text-forest-emerald flex items-center gap-2">
-                <FileText className="w-5 h-5 text-tribal-terracotta" />
-                Submitted Coordinates ({submittedPlaces.length})
+            <div className="glass-panel p-6 rounded-3xl border border-white/60 bg-white/70 flex flex-col gap-4">
+              <h3 className="font-sans font-bold text-base text-forest-emerald flex items-center gap-2 border-b border-charcoal-stone/10 pb-2">
+                <Clock className="w-4.5 h-4.5 text-tribal-terracotta" />
+                Live Submissions Status
               </h3>
               
-              <div className="flex flex-col gap-3 max-h-[480px] overflow-y-auto pr-1">
-                {submittedPlaces.map((place) => (
-                  <div 
-                    key={place.id}
-                    className="p-4 rounded-xl bg-white border border-charcoal-stone/10 flex flex-col gap-2 relative shadow-sm"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-xs text-forest-emerald">{place.name}</span>
+              <div className="flex flex-col gap-3 max-h-[300px] overflow-y-auto pr-1">
+                {submittedPlaces.slice(0, 4).map((place) => (
+                  <div key={place.id} className="p-3 bg-white border border-charcoal-stone/10 rounded-xl flex flex-col gap-1.5 text-xs">
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold truncate text-forest-emerald max-w-[120px]">{place.name}</span>
                       <span className={`text-[8px] font-mono font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                        place.status === "approved"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-amber-100 text-amber-700"
+                        place.status === 'PUBLISHED' ? 'bg-green-100 text-green-700' :
+                        place.status === 'REJECTED' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
                       }`}>
-                        {place.status || "pending"}
+                        {place.status}
                       </span>
                     </div>
-
-                    <p className="text-[10px] text-charcoal-stone/60 leading-relaxed line-clamp-2">
-                      {place.story}
-                    </p>
-
-                    <div className="flex justify-between items-center text-[9px] font-mono text-charcoal-stone/40 border-t border-charcoal-stone/5 pt-2">
-                      <span>MAP PIN: X {place.coordinates?.mapX || 50}% / Y {place.coordinates?.mapY || 50}%</span>
-                      {place.status !== "approved" && (
-                        <span className="flex items-center gap-1 text-amber-600">
-                          <Clock className="w-3 h-3" /> Moderating
-                        </span>
-                      )}
-                    </div>
+                    {place.status === 'REJECTED' && (
+                      <button 
+                        onClick={() => startEdit(place)}
+                        className="text-[10px] text-left text-red-600 hover:underline flex items-center gap-1 font-bold"
+                      >
+                        <Edit2 className="w-3 h-3" /> Correct and Resubmit
+                      </button>
+                    )}
                   </div>
                 ))}
 
                 {submittedPlaces.length === 0 && (
-                  <div className="text-center py-10 border border-dashed border-charcoal-stone/20 rounded-xl bg-white/30 text-charcoal-stone/40 flex flex-col items-center justify-center gap-2">
-                    <Clock className="w-8 h-8 text-charcoal-stone/30" />
-                    <span>No submissions filed yet</span>
+                  <div className="text-center py-8 text-charcoal-stone/40 text-xs">
+                    No submissions filed yet.
                   </div>
                 )}
               </div>
             </div>
           </div>
 
+        </div>
+      )}
+
+      {/* VIEW 2: Add / Edit Place Form */}
+      {activeSubTab === "add_place" && (
+        <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-white/60 shadow-xl bg-white/70 flex flex-col gap-6">
+          <div className="flex justify-between items-center border-b border-charcoal-stone/10 pb-4">
+            <h2 className="text-lg font-sans font-bold text-forest-emerald">
+              {editingId ? "Update Your Submission Logs" : "File Landmark Telemetry Entry"}
+            </h2>
+            {editingId && (
+              <button onClick={cancelEdit} className="text-xs font-mono font-bold text-red-600 hover:underline">
+                Cancel Editing
+              </button>
+            )}
+          </div>
+
+          {formSuccess && (
+            <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/25 text-green-800 text-xs flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-green-600" />
+              <span>Record successfully saved! Redirecting to dashboard...</span>
+            </div>
+          )}
+
+          <form onSubmit={handlePlaceSubmission} className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-xs">
+            
+            <div className="flex flex-col gap-1.5">
+              <label className="font-bold text-charcoal-stone/75 uppercase text-[9px] tracking-wide">Destination Name</label>
+              <input
+                type="text" required value={placeName} onChange={(e) => setPlaceName(e.target.value)}
+                placeholder="e.g. Tamra Gumar Gorge View"
+                className="p-3 rounded-xl bg-white border border-charcoal-stone/15 font-semibold focus:outline-none"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="font-bold text-charcoal-stone/75 uppercase text-[9px] tracking-wide">Catchy tagline</label>
+              <input
+                type="text" required value={shortDesc} onChange={(e) => setShortDesc(e.target.value)}
+                placeholder="e.g. Breathtaking valley drop inside Lohandiguda block"
+                className="p-3 rounded-xl bg-white border border-charcoal-stone/15 font-semibold focus:outline-none"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="font-bold text-charcoal-stone/75 uppercase text-[9px] tracking-wide">Category</label>
+              <select
+                required value={selectedCategoryId} onChange={(e) => setSelectedCategoryId(e.target.value)}
+                className="p-3 rounded-xl bg-white border border-charcoal-stone/15 font-semibold focus:outline-none"
+              >
+                <option value="">Select Category</option>
+                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="font-bold text-charcoal-stone/75 uppercase text-[9px] tracking-wide">District</label>
+              <select
+                required value={selectedDistrictId} onChange={(e) => setSelectedDistrictId(e.target.value)}
+                className="p-3 rounded-xl bg-white border border-charcoal-stone/15 font-semibold focus:outline-none"
+              >
+                <option value="">Select District</option>
+                {districts.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 sm:col-span-2">
+              <div className="flex flex-col gap-1.5">
+                <label className="font-bold text-charcoal-stone/75 uppercase text-[9px]">Latitude</label>
+                <input
+                  type="number" step="any" required value={latitude} onChange={(e) => setLatitude(e.target.value)}
+                  placeholder="e.g. 19.2006"
+                  className="p-3 rounded-xl bg-white border border-charcoal-stone/15 font-semibold focus:outline-none"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="font-bold text-charcoal-stone/75 uppercase text-[9px]">Longitude</label>
+                <input
+                  type="number" step="any" required value={longitude} onChange={(e) => setLongitude(e.target.value)}
+                  placeholder="e.g. 81.6961"
+                  className="p-3 rounded-xl bg-white border border-charcoal-stone/15 font-semibold focus:outline-none"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5 justify-end">
+                <button
+                  type="button" onClick={handleGetLocation}
+                  className="w-full py-3 bg-forest-emerald hover:bg-tribal-terracotta text-white rounded-xl font-bold font-mono tracking-wider transition-all"
+                >
+                  GPS Telemetry
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1.5 sm:col-span-2">
+              <label className="font-bold text-charcoal-stone/75 uppercase text-[9px]">Significance & Lore</label>
+              <textarea
+                value={fullDesc} onChange={(e) => setFullDesc(e.target.value)} rows={4}
+                placeholder="Narrate details of local community importance, safety guides, and food options nearby..."
+                className="p-3 rounded-xl bg-white border border-charcoal-stone/15 font-semibold focus:outline-none resize-none"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="font-bold text-charcoal-stone/75 uppercase text-[9px]">Cover Image</label>
+              <div className="flex gap-2">
+                <input
+                  type="text" value={featuredImage} onChange={(e) => setFeaturedImage(e.target.value)}
+                  placeholder="/uploads/places/cover.webp"
+                  className="flex-1 p-3 rounded-xl bg-white border border-charcoal-stone/15 font-semibold focus:outline-none"
+                />
+                <label className="px-4 py-3 bg-forest-emerald hover:bg-tribal-terracotta text-white rounded-xl font-bold font-mono tracking-wider transition-all cursor-pointer flex items-center justify-center select-none text-[10px]">
+                  <span>Upload</span>
+                  <input
+                    type="file" accept="image/*" className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const url = await handleFileUpload(file, "places");
+                        if (url) setFeaturedImage(url);
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="font-bold text-charcoal-stone/75 uppercase text-[9px]">Best Season to Visit</label>
+              <input
+                type="text" value={bestSeason} onChange={(e) => setBestSeason(e.target.value)}
+                placeholder="e.g. October to February"
+                className="p-3 rounded-xl bg-white border border-charcoal-stone/15 font-semibold focus:outline-none"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5 sm:col-span-2">
+              <label className="font-bold text-charcoal-stone/75 uppercase text-[9px]">Submissions Status Mode</label>
+              <select
+                value={formStatus} onChange={(e) => setFormStatus(e.target.value)}
+                className="p-3 rounded-xl bg-white border border-charcoal-stone/15 font-semibold focus:outline-none"
+              >
+                <option value="SUBMITTED">Submit for Review (Audit Log)</option>
+                <option value="DRAFT">Keep as Local Draft</option>
+              </select>
+            </div>
+
+            <div className="sm:col-span-2 pt-4 border-t border-charcoal-stone/5 flex justify-end gap-3">
+              <button
+                type="submit"
+                className="px-8 py-3.5 rounded-xl bg-forest-emerald hover:bg-emerald-800 text-white font-bold transition-all shadow cursor-pointer"
+              >
+                {editingId ? "Save Changes" : "Submit Travel Log"}
+              </button>
+            </div>
+
+          </form>
+        </div>
+      )}
+
+      {/* VIEW 3: List of submissions */}
+      {activeSubTab === "my_places" && (
+        <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-white/60 bg-white/70 flex flex-col gap-6">
+          <h2 className="text-lg font-sans font-bold text-forest-emerald border-b border-charcoal-stone/10 pb-3">
+            Contributions Backlog & Status Logs
+          </h2>
+
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-charcoal-stone/20 text-charcoal-stone/50 font-mono uppercase tracking-wider">
+                  <th className="py-3 px-4">Place Name</th>
+                  <th className="py-3 px-4">District</th>
+                  <th className="py-3 px-4">Category</th>
+                  <th className="py-3 px-4">Approval State</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-charcoal-stone/10">
+                {submittedPlaces.map(place => (
+                  <tr key={place.id} className="hover:bg-white/40 transition-colors">
+                    <td className="py-4 px-4 font-bold text-forest-emerald">{place.name}</td>
+                    <td className="py-4 px-4">{place.district?.name || "Bastar"}</td>
+                    <td className="py-4 px-4 font-mono">{place.category?.name || "Waterfalls"}</td>
+                    <td className="py-4 px-4">
+                      <span className={`px-2.5 py-1 rounded-full uppercase font-mono text-[9px] font-bold ${
+                        place.status === 'PUBLISHED' ? 'bg-green-100 text-green-700' :
+                        place.status === 'REJECTED' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
+                      }`}>
+                        {place.status}
+                      </span>
+                    </td>
+                    <td className="py-4 px-4 text-right">
+                      {place.status !== 'PUBLISHED' ? (
+                        <button
+                          onClick={() => startEdit(place)}
+                          className="bg-forest-emerald hover:bg-emerald-800 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1.5 ml-auto"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" /> Edit Record
+                        </button>
+                      ) : (
+                        <Link 
+                          href={`/destination/${place.id}`}
+                          className="bg-white/95 border border-charcoal-stone/15 hover:bg-sand-beige text-charcoal-stone px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all inline-flex items-center gap-1.5"
+                        >
+                          <Eye className="w-3.5 h-3.5" /> View Public Card
+                        </Link>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+
+                {submittedPlaces.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="py-12 text-center text-charcoal-stone/40">
+                      No coordinate contributions recorded under this identity registry.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* VIEW 4: Compose Story with Auto Media & AI Draft suggestions */}
+      {activeSubTab === "add_story" && (
+        <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-white/60 shadow-xl bg-white/70 flex flex-col gap-6">
+          <div className="flex justify-between items-center border-b border-charcoal-stone/10 pb-4">
+            <h2 className="text-lg font-sans font-bold text-forest-emerald flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-tribal-terracotta" />
+              Compose New Travel Story
+            </h2>
+          </div>
+
+          {storySuccess && (
+            <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/25 text-green-800 text-xs flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-green-600" />
+              <span>Story submitted successfully for review! Redirecting...</span>
+            </div>
+          )}
+
+          <form onSubmit={handleStorySubmission} className="flex flex-col gap-6 text-xs text-charcoal-stone">
+            
+            {/* Choose Place Dropdown */}
+            <div className="flex flex-col gap-1.5">
+              <label className="font-bold text-charcoal-stone/75 uppercase text-[9px] tracking-wide">Select Target Destination</label>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <select
+                  value={composerPlaceId} onChange={(e) => setComposerPlaceId(e.target.value)}
+                  className="flex-1 p-3.5 rounded-xl bg-white border border-charcoal-stone/15 text-sm font-semibold focus:outline-none"
+                  required
+                >
+                  <option value="" disabled>-- Select a Place --</option>
+                  {allPlaces.map((place) => (
+                    <option key={place.id} value={place.id}>
+                      {place.name} ({place.district?.name || "Bastar"})
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  type="button" onClick={handleGenerateAIDraft} disabled={isDrafting || !composerPlaceId}
+                  className="px-6 py-3.5 bg-forest-emerald hover:bg-emerald-800 text-white rounded-xl font-bold font-sans tracking-wide transition-all shadow flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {isDrafting ? (
+                    <>
+                      <Clock className="w-4 h-4 animate-spin" />
+                      Drafting...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      Generate AI Draft Story
+                    </>
+                  )}
+                </button>
+              </div>
+              <p className="text-[10px] text-charcoal-stone/50 mt-1">
+                Selecting a destination will automatically query the Media Library for approved assets and allow AI draft generation.
+              </p>
+            </div>
+
+            {/* Auto Media Loader Drawer */}
+            <div className="flex flex-col gap-3 p-5 rounded-2xl bg-white/50 border border-charcoal-stone/10">
+              <div className="flex justify-between items-center border-b border-charcoal-stone/5 pb-2">
+                <span className="font-bold text-forest-emerald text-sm flex items-center gap-1.5">
+                  <BookOpen className="w-4.5 h-4.5 text-tribal-terracotta" />
+                  Media Discovery Suggestions ({availableMedia.length} assets discovered)
+                </span>
+                <span className="text-[10px] text-charcoal-stone/50 uppercase font-mono">Status: Approved Assets Only</span>
+              </div>
+
+              {availableMedia.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  {availableMedia.map((mediaItem) => (
+                    <label
+                      key={mediaItem.id}
+                      className={`relative rounded-xl border overflow-hidden p-2 flex flex-col gap-2 transition-all cursor-pointer select-none bg-white ${
+                        checkedMediaIds.includes(mediaItem.id)
+                          ? "border-forest-emerald ring-2 ring-forest-emerald/20 shadow-sm"
+                          : "border-charcoal-stone/10 hover:border-charcoal-stone/30"
+                      }`}
+                    >
+                      <div className="relative aspect-video rounded-lg overflow-hidden bg-charcoal-stone/5">
+                        <img
+                          src={mediaItem.filePath}
+                          alt={mediaItem.title}
+                          className="object-cover w-full h-full"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = "/chitrakote.png";
+                          }}
+                        />
+                        <div className="absolute top-1.5 right-1.5 bg-white/95 rounded-full p-1 border border-charcoal-stone/10 scale-90">
+                          <input
+                            type="checkbox"
+                            className="cursor-pointer"
+                            checked={checkedMediaIds.includes(mediaItem.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setCheckedMediaIds([...checkedMediaIds, mediaItem.id]);
+                              } else {
+                                setCheckedMediaIds(checkedMediaIds.filter(id => id !== mediaItem.id));
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex flex-col text-[10px] px-1">
+                        <span className="font-bold truncate text-charcoal-stone">{mediaItem.title}</span>
+                        <span className="text-[8px] text-charcoal-stone/50 truncate">Owner: {mediaItem.copyrightOwner || "CG Tourism"}</span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6 text-charcoal-stone/40">
+                  No approved assets found in the Media Library for this place. Standard local folder sync is active.
+                </div>
+              )}
+            </div>
+
+            {/* Title */}
+            <div className="flex flex-col gap-1.5">
+              <label className="font-bold text-charcoal-stone/75 uppercase text-[9px] tracking-wide">Story Title</label>
+              <input
+                type="text" required value={storyTitle} onChange={(e) => setStoryTitle(e.target.value)}
+                placeholder="e.g. Exploring Laxman Temple - An Ancient Heritage Masterpiece"
+                className="p-3.5 rounded-xl bg-white border border-charcoal-stone/15 text-sm font-semibold focus:outline-none"
+              />
+            </div>
+
+            {/* Description (Narrative) */}
+            <div className="flex flex-col gap-1.5">
+              <label className="font-bold text-charcoal-stone/75 uppercase text-[9px] tracking-wide">Narrative Content / Story</label>
+              <textarea
+                required value={storyDesc} onChange={(e) => setStoryDesc(e.target.value)} rows={7}
+                placeholder="Write your travelogue, experiences, drone views overlay timeline, and visitor recommendations here..."
+                className="p-3.5 rounded-xl bg-white border border-charcoal-stone/15 text-sm font-semibold focus:outline-none resize-none"
+              />
+            </div>
+
+            {/* Tags / Keywords */}
+            {suggestedTags.length > 0 && (
+              <div className="flex flex-col gap-1.5">
+                <label className="font-bold text-charcoal-stone/75 uppercase text-[9px] tracking-wide">Suggested Tags & Keywords</label>
+                <div className="flex flex-wrap gap-2">
+                  {suggestedTags.map((tag, i) => (
+                    <span key={i} className="px-3 py-1 rounded-full bg-forest-emerald/10 text-forest-emerald font-semibold text-[10px]">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Config: Language & Visibility */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div className="flex flex-col gap-1.5">
+                <label className="font-bold text-charcoal-stone/75 uppercase text-[9px] tracking-wide">Story Language</label>
+                <select
+                  value={storyLanguage} onChange={(e) => setStoryLanguage(e.target.value)}
+                  className="p-3 rounded-xl bg-white border border-charcoal-stone/15 font-semibold focus:outline-none"
+                >
+                  <option value="Hindi">Hindi</option>
+                  <option value="Chhattisgarhi">Chhattisgarhi</option>
+                  <option value="English">English</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="font-bold text-charcoal-stone/75 uppercase text-[9px] tracking-wide">Visibility Mode</label>
+                <select
+                  value={storyVisibility} onChange={(e) => setStoryVisibility(e.target.value)}
+                  className="p-3 rounded-xl bg-white border border-charcoal-stone/15 font-semibold focus:outline-none"
+                >
+                  <option value="PUBLIC">Public (Visible on Feed)</option>
+                  <option value="PRIVATE">Private (Creator Only)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div className="pt-4 border-t border-charcoal-stone/5 flex justify-end gap-3">
+              <button
+                type="submit"
+                className="px-8 py-3.5 rounded-xl bg-forest-emerald hover:bg-emerald-800 text-white font-bold transition-all shadow cursor-pointer text-sm"
+              >
+                Submit Story for Review
+              </button>
+            </div>
+          </form>
         </div>
       )}
 

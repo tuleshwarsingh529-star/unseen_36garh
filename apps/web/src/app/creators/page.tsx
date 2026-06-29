@@ -2,7 +2,8 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { Filter, Play, Map, MapPin } from "lucide-react";
+import { io } from "socket.io-client";
+import { Filter, Play, Map, MapPin, RefreshCw } from "lucide-react";
 import { CREATORS, CreatorVideo } from "../data/creators";
 import { useLanguage } from "../../context/LanguageContext";
 import CreatorCard from "../../components/creators/CreatorCard";
@@ -15,14 +16,32 @@ export default function CreatorsFeed() {
   const [activeLanguage, setActiveLanguage] = useState("All");
   const [videos, setVideos] = useState<CreatorVideo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<string | null>(null);
 
   React.useEffect(() => {
     const fetchFeed = async () => {
       try {
-        const res = await fetch("http://localhost:4000/api/v1/creators-feed");
+        const res = await fetch("http://localhost:4000/api/v1/feed");
         if (res.ok) {
           const data = await res.json();
-          setVideos(data);
+          const mapped = data.map((story: any) => ({
+            id: story.id,
+            creatorId: story.creatorId || "c1",
+            thumbnailUrl: story.coverImage || "/chitrakote.png",
+            videoUrl: story.videoUrl,
+            title: story.title,
+            location: story.place?.name || story.district?.name || "Chhattisgarh",
+            district: story.district?.name || "Bastar",
+            category: story.category?.name || "Nature",
+            views: `${story.viewsCount}`,
+            likes: story.likesCount || 0,
+            duration: "1:00",
+            language: story.language || "Hindi",
+            isTrending: story.likesCount > 100,
+            isHiddenGem: story.viewsCount < 500,
+          }));
+          setVideos(mapped);
         }
       } catch (error) {
         console.error("Failed to fetch creator feed", error);
@@ -31,7 +50,126 @@ export default function CreatorsFeed() {
       }
     };
     fetchFeed();
+
+    // Connect to WebSocket Server for Real-Time synchronizations
+    const socket = io("http://localhost:4000");
+
+    socket.on("connect", () => {
+      console.log("Connected to Unseen 36garh WebSockets.");
+    });
+
+    socket.on("story.created", (newStory: any) => {
+      const mapped = {
+        id: newStory.id,
+        creatorId: newStory.creatorId || "c1",
+        thumbnailUrl: newStory.coverImage || "/chitrakote.png",
+        videoUrl: newStory.videoUrl,
+        title: newStory.title,
+        location: newStory.place?.name || newStory.district?.name || "Chhattisgarh",
+        district: newStory.district?.name || "Bastar",
+        category: newStory.category?.name || "Nature",
+        views: `${newStory.viewsCount}`,
+        likes: newStory.likesCount || 0,
+        duration: "1:00",
+        language: newStory.language || "Hindi",
+        isTrending: newStory.likesCount > 100,
+        isHiddenGem: newStory.viewsCount < 500,
+      };
+      setVideos((prev) => {
+        if (prev.some(v => v.id === mapped.id)) return prev;
+        return [mapped, ...prev];
+      });
+    });
+
+    socket.on("story.liked", (event: any) => {
+      setVideos((prev) =>
+        prev.map((video) =>
+          video.id === event.storyId
+            ? { ...video, likes: event.likesCount }
+            : video
+        )
+      );
+    });
+
+    socket.on("story.viewed", (event: any) => {
+      setVideos((prev) =>
+        prev.map((video) =>
+          video.id === event.storyId
+            ? { ...video, views: `${event.viewsCount}` }
+            : video
+        )
+      );
+    });
+
+    socket.on("story.approved", (approvedStory: any) => {
+      const mapped = {
+        id: approvedStory.id,
+        creatorId: approvedStory.creatorId || "c1",
+        thumbnailUrl: approvedStory.coverImage || "/chitrakote.png",
+        videoUrl: approvedStory.videoUrl,
+        title: approvedStory.title,
+        location: approvedStory.place?.name || approvedStory.district?.name || "Chhattisgarh",
+        district: approvedStory.district?.name || "Bastar",
+        category: approvedStory.category?.name || "Nature",
+        views: `${approvedStory.viewsCount}`,
+        likes: approvedStory.likesCount || 0,
+        duration: "1:00",
+        language: approvedStory.language || "Hindi",
+        isTrending: approvedStory.likesCount > 100,
+        isHiddenGem: approvedStory.viewsCount < 500,
+      };
+      setVideos((prev) => {
+        if (prev.some(v => v.id === mapped.id)) return prev;
+        return [mapped, ...prev];
+      });
+    });
+
+    socket.on("story.deleted", (event: any) => {
+      setVideos((prev) => prev.filter((video) => video.id !== event.id));
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, []);
+
+  const handleSync = async () => {
+    setIsSyncing(true);
+    setSyncStatus("Querying Social Graph API...");
+    try {
+      const res = await fetch("http://localhost:4000/api/v1/feed/trending");
+      if (res.ok) {
+        const data = await res.json();
+        const mapped = data.map((story: any) => ({
+          id: story.id,
+          creatorId: story.creatorId || "c1",
+          thumbnailUrl: story.coverImage || "/chitrakote.png",
+          videoUrl: story.videoUrl,
+          title: story.title,
+          location: story.place?.name || story.district?.name || "Chhattisgarh",
+          district: story.district?.name || "Bastar",
+          category: story.category?.name || "Nature",
+          views: `${story.viewsCount}`,
+          likes: story.likesCount || 0,
+          duration: "1:00",
+          language: story.language || "Hindi",
+          isTrending: story.likesCount > 100,
+          isHiddenGem: story.viewsCount < 500,
+        }));
+        setVideos(mapped);
+        setSyncStatus(`Sync Complete! Synced ${mapped.length} trending items.`);
+        setTimeout(() => setSyncStatus(null), 3000);
+      } else {
+        throw new Error("Failed to sync");
+      }
+    } catch (e: any) {
+      console.error(e);
+      setSyncStatus("Connection Timeout. Synced default seed backup.");
+      setTimeout(() => setSyncStatus(null), 3000);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const categories = ["All", "Nature", "Culture", "Food", "Festivals", "Trekking", "Hidden Places", "Adventure"];
   const languages = ["All", "Hindi", "Chhattisgarhi", "English"];
@@ -138,38 +276,57 @@ export default function CreatorsFeed() {
       {/* 4. Quick Discovery Chips */}
       <section className="sticky top-16 z-30 bg-zinc-50/90 dark:bg-black/90 backdrop-blur-xl border-b border-zinc-200 dark:border-zinc-900 shadow-sm transition-all">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-4">
-            <div className="flex-shrink-0 flex items-center text-zinc-500 font-medium text-sm border-r border-zinc-300 dark:border-zinc-700 pr-4">
-              <Filter className="w-4 h-4 mr-2" /> Filters
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4 overflow-hidden flex-1">
+              <div className="flex-shrink-0 flex items-center text-zinc-500 font-medium text-sm border-r border-zinc-300 dark:border-zinc-700 pr-4">
+                <Filter className="w-4 h-4 mr-2" /> Filters
+              </div>
+              <div className="flex overflow-x-auto hide-scrollbar gap-2 items-center flex-1">
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveCategory(cat)}
+                    className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+                      activeCategory === cat
+                        ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 shadow-md"
+                        : "bg-white text-zinc-700 hover:bg-zinc-100 border border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:border-zinc-800 dark:hover:bg-zinc-800"
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+                <div className="w-px h-6 bg-zinc-300 dark:bg-zinc-700 mx-2 flex-shrink-0" />
+                {languages.map((lang) => (
+                  <button
+                    key={lang}
+                    onClick={() => setActiveLanguage(lang)}
+                    className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+                      activeLanguage === lang
+                        ? "bg-emerald-600 text-white shadow-md shadow-emerald-900/20"
+                        : "bg-white text-zinc-700 hover:bg-zinc-100 border border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:border-zinc-800 dark:hover:bg-zinc-800"
+                    }`}
+                  >
+                    {lang}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="flex overflow-x-auto hide-scrollbar gap-2 items-center flex-1">
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-semibold transition-all ${
-                    activeCategory === cat
-                      ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 shadow-md"
-                      : "bg-white text-zinc-700 hover:bg-zinc-100 border border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:border-zinc-800 dark:hover:bg-zinc-800"
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-              <div className="w-px h-6 bg-zinc-300 dark:bg-zinc-700 mx-2 flex-shrink-0" />
-              {languages.map((lang) => (
-                <button
-                  key={lang}
-                  onClick={() => setActiveLanguage(lang)}
-                  className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-semibold transition-all ${
-                    activeLanguage === lang
-                      ? "bg-emerald-600 text-white shadow-md shadow-emerald-900/20"
-                      : "bg-white text-zinc-700 hover:bg-zinc-100 border border-zinc-200 dark:bg-zinc-900 dark:text-zinc-300 dark:border-zinc-800 dark:hover:bg-zinc-800"
-                  }`}
-                >
-                  {lang}
-                </button>
-              ))}
+
+            {/* Sync Social Button */}
+            <div className="flex items-center gap-3 flex-shrink-0">
+              {syncStatus && (
+                <span className="hidden md:inline-block text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20">
+                  {syncStatus}
+                </span>
+              )}
+              <button
+                onClick={handleSync}
+                disabled={isSyncing}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer shadow-sm border border-zinc-200 dark:border-zinc-800"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`} />
+                {isSyncing ? "Syncing..." : "Sync Feed"}
+              </button>
             </div>
           </div>
         </div>

@@ -21,7 +21,7 @@ const mukta = Mukta({
 });
 
 export const metadata: Metadata = {
-  title: "Unseen_36garh — Explore the Real Chhattisgarh",
+  title: "Unseen Chhattisgarh — Explore the Real 36garh",
   description:
     "Digitizing Chhattisgarh's rich tribal narratives, natural bio-reserves, and heritage corridors. Built with authenticity for responsible digital discovery.",
   manifest: "/manifest.json",
@@ -32,11 +32,20 @@ export const metadata: Metadata = {
     "Chitrakote",
     "Chhattisgarh forest",
     "CG Tourism",
-    "Unseen_36garh",
+    "Unseen Chhattisgarh",
   ],
+  icons: {
+    icon: [
+      { url: "/logo.ico", sizes: "any" },
+      { url: "/logo.jpg", type: "image/jpeg" },
+    ],
+    apple: [{ url: "/logo.jpg", sizes: "180x180", type: "image/jpeg" }],
+    shortcut: "/logo.ico",
+  },
   openGraph: {
-    title: "Unseen_36garh",
+    title: "Unseen Chhattisgarh",
     description: "Explore the Real Chhattisgarh — Tribal, Natural, Authentic.",
+    images: [{ url: "/logo.jpg" }],
     locale: "en_IN",
     type: "website",
   },

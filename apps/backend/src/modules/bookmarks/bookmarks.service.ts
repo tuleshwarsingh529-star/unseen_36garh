@@ -56,6 +56,7 @@ export class BookmarksService {
         place: {
           include: {
             category: true,
+            district: true,
           },
         },
       },
@@ -67,15 +68,15 @@ export class BookmarksService {
         id: b.place.id,
         name: b.place.name,
         slug: b.place.slug,
-        description: b.place.description,
-        district: b.place.district,
+        description: b.place.shortDescription || '',
+        district: b.place.district.name,
         category: b.place.category.name,
         latitude: b.place.latitude,
         longitude: b.place.longitude,
-        heroImage: b.place.heroImage,
-        bestSeason: b.place.bestSeason,
-        safetyInfo: b.place.safetyInfo,
-        rules: b.place.rules,
+        heroImage: b.place.heroImage || '',
+        bestSeason: b.place.bestSeason || '',
+        safetyInfo: '',
+        rules: '',
       },
     }));
   }

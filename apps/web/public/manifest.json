@@ -1,24 +1,46 @@
 {
-  "name": "Chhattisgarh Tourism",
-  "short_name": "CG Tourism",
-  "description": "Regional Digital Tourism and Safety Platform for Chhattisgarh",
+  "name": "Unseen Chhattisgarh",
+  "short_name": "Unseen 36garh",
+  "description": "Digitizing Chhattisgarh's tribal heritage, natural reserves, and historic corridors.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#06b6d4",
+  "background_color": "#F7F0E6",
+  "theme_color": "#1B4332",
   "orientation": "portrait-primary",
+  "categories": ["travel", "tourism", "lifestyle"],
+  "lang": "en-IN",
   "icons": [
     {
-      "src": "/globe.svg",
+      "src": "/logo.jpg",
       "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/jpeg",
+      "purpose": "any"
     },
     {
-      "src": "/globe.svg",
+      "src": "/logo.jpg",
       "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo.ico",
+      "sizes": "48x48 32x32 16x16",
+      "type": "image/x-icon",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Explore Destinations",
+      "short_name": "Explore",
+      "url": "/explore",
+      "icons": [{ "src": "/logo.jpg", "sizes": "96x96" }]
+    },
+    {
+      "name": "Admin Dashboard",
+      "short_name": "Admin",
+      "url": "/admin",
+      "icons": [{ "src": "/logo.jpg", "sizes": "96x96" }]
     }
   ]
 }

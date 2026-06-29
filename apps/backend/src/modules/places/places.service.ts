@@ -6,7 +6,7 @@ import { CreatePlaceDto } from './dto/create-place.dto';
 export class PlacesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(dto: CreatePlaceDto) {
+  async create(dto: CreatePlaceDto, user?: { id: string; role: string }) {
     const slug = dto.name
       .toLowerCase()
       .trim()
@@ -22,30 +22,161 @@ export class PlacesService {
       throw new BadRequestException(`Destination with a matching slug '${slug}' already exists.`);
     }
 
+    let initialStatus = 'PUBLISHED';
+    let verified = true;
+    
+    if (user) {
+      if (user.role === 'CREATOR') {
+        initialStatus = dto.status === 'DRAFT' ? 'DRAFT' : 'SUBMITTED';
+        verified = false;
+      } else if (dto.status) {
+        initialStatus = dto.status;
+        verified = dto.status === 'PUBLISHED';
+      }
+    }
+
     return this.prisma.place.create({
       data: {
         name: dto.name,
         slug,
-        description: dto.description,
-        district: dto.district,
-        categoryId: dto.categoryId,
-        latitude: dto.latitude,
-        longitude: dto.longitude,
-        heroImage: dto.heroImage,
+        shortDescription: dto.shortDescription || '',
+        fullDescription: dto.fullDescription || '',
+        history: dto.history || '',
+        significance: dto.significance || '',
+        ...(dto.districtId  ? { districtId: dto.districtId }   : {}),
+        ...(dto.blockId     ? { blockId: dto.blockId }          : {}),
+        ...(dto.categoryId  ? { categoryId: dto.categoryId }    : {}),
+        latitude: dto.latitude ?? 0,
+        longitude: dto.longitude ?? 0,
+        googleMapUrl: dto.googleMapUrl,
+        altitude: dto.altitude,
+        address: dto.address,
+        nearestCity: dto.nearestCity,
+        distanceFromCity: dto.distanceFromCity,
         bestSeason: dto.bestSeason || 'All seasons',
-        history: dto.history || 'Local oral lore preservation stage.',
-        safetyInfo: dto.safetyInfo || 'Respect standard forest and water safety guidelines.',
-        rules: dto.rules || 'Littering and standard plastics are prohibited.',
-        verified: false, // Default to unverified staging queue for Admin moderation review
-        ...(dto.mediaUrls && dto.mediaUrls.length > 0 ? {
-          media: {
-            create: dto.mediaUrls.map(url => ({
-              url: url,
-              type: url.toLowerCase().match(/\.(mp4|webm|ogg)$/) ? 'VIDEO' : 'IMAGE'
+        openingTime: dto.openingTime,
+        closingTime: dto.closingTime,
+        entryFee: dto.entryFee,
+        parkingAvailable: dto.parkingAvailable || false,
+        foodAvailable: dto.foodAvailable || false,
+        guideAvailable: dto.guideAvailable || false,
+        wheelchairAccessible: dto.wheelchairAccessible || false,
+        washroomAvailable: dto.washroomAvailable || false,
+        petFriendly: dto.petFriendly || false,
+        photographyAllowed: dto.photographyAllowed || false,
+        contactNumber: dto.contactNumber,
+        website: dto.website,
+        featuredImage: dto.featuredImage,
+        heroImage: dto.featuredImage,
+        metaTitle: dto.metaTitle,
+        metaDescription: dto.metaDescription,
+        metaKeywords: dto.metaKeywords,
+        panoramaUrls: dto.panoramaUrls ? JSON.stringify(dto.panoramaUrls) : '[]',
+        status: initialStatus,
+        verified,
+        creatorId: user?.id || null,
+        ...(dto.imageUrls && dto.imageUrls.length > 0 ? {
+          images: {
+            create: dto.imageUrls.map(url => ({
+              imageUrl: url,
+              caption: `Image of ${dto.name}`,
+              isFeatured: false
+            }))
+          }
+        } : {}),
+        ...(dto.videoUrls && dto.videoUrls.length > 0 ? {
+          videos: {
+            create: dto.videoUrls.map(url => ({
+              videoUrl: url,
+              title: `Video of ${dto.name}`
             }))
           }
         } : {})
       },
+    });
+  }
+
+  async update(id: string, dto: CreatePlaceDto, user: { id: string; role: string }) {
+    const place = await this.prisma.place.findUnique({
+      where: { id },
+    });
+
+    if (!place) {
+      throw new NotFoundException(`Destination with ID '${id}' not found.`);
+    }
+
+    if (user.role === 'CREATOR' && place.creatorId !== user.id) {
+      throw new BadRequestException('Forbidden: You can only edit your own submissions.');
+    }
+
+    let status = dto.status || place.status;
+    let verified = place.verified;
+
+    if (user.role === 'CREATOR') {
+      status = dto.status === 'DRAFT' ? 'DRAFT' : 'SUBMITTED';
+      verified = false;
+    } else if (dto.status) {
+      verified = dto.status === 'PUBLISHED';
+    }
+
+    return this.prisma.place.update({
+      where: { id },
+      data: {
+        name: dto.name,
+        shortDescription: dto.shortDescription,
+        fullDescription: dto.fullDescription,
+        history: dto.history,
+        significance: dto.significance,
+        districtId: dto.districtId,
+        blockId: dto.blockId,
+        categoryId: dto.categoryId,
+        latitude: dto.latitude,
+        longitude: dto.longitude,
+        googleMapUrl: dto.googleMapUrl,
+        altitude: dto.altitude,
+        address: dto.address,
+        nearestCity: dto.nearestCity,
+        distanceFromCity: dto.distanceFromCity,
+        bestSeason: dto.bestSeason,
+        openingTime: dto.openingTime,
+        closingTime: dto.closingTime,
+        entryFee: dto.entryFee,
+        parkingAvailable: dto.parkingAvailable,
+        foodAvailable: dto.foodAvailable,
+        guideAvailable: dto.guideAvailable,
+        wheelchairAccessible: dto.wheelchairAccessible,
+        washroomAvailable: dto.washroomAvailable,
+        petFriendly: dto.petFriendly,
+        photographyAllowed: dto.photographyAllowed,
+        contactNumber: dto.contactNumber,
+        website: dto.website,
+        featuredImage: dto.featuredImage,
+        heroImage: dto.featuredImage,
+        metaTitle: dto.metaTitle,
+        metaDescription: dto.metaDescription,
+        metaKeywords: dto.metaKeywords,
+        panoramaUrls: dto.panoramaUrls ? JSON.stringify(dto.panoramaUrls) : undefined,
+        status,
+        verified,
+      },
+    });
+  }
+
+  async delete(id: string, user: { id: string; role: string }) {
+    const place = await this.prisma.place.findUnique({
+      where: { id },
+    });
+
+    if (!place) {
+      throw new NotFoundException(`Destination with ID '${id}' not found.`);
+    }
+
+    if (!['ADMIN', 'SUPER_ADMIN', 'MODERATOR'].includes(user.role)) {
+      throw new BadRequestException('Forbidden: Only administrators can delete records.');
+    }
+
+    return this.prisma.place.delete({
+      where: { id },
     });
   }
 
@@ -54,11 +185,13 @@ export class PlacesService {
       where: {
         ...(!includeUnverified ? { verified: true } : {}),
         ...(categorySlug ? { category: { slug: categorySlug } } : {}),
-        ...(district ? { district } : {}),
+        ...(district ? { district: { name: district } } : {}),
       },
       include: {
         category: true,
-        media: true,
+        district: true,
+        images: true,
+        videos: true,
       },
     });
   }
@@ -67,12 +200,22 @@ export class PlacesService {
     return this.prisma.category.findMany();
   }
 
+  async getDistricts() {
+    return this.prisma.district.findMany({
+      include: {
+        places: true
+      }
+    });
+  }
+
   async findBySlug(slug: string) {
     const place = await this.prisma.place.findUnique({
       where: { slug },
       include: {
         category: true,
-        media: true,
+        district: true,
+        images: true,
+        videos: true,
         reviews: {
           include: {
             user: {
@@ -95,8 +238,7 @@ export class PlacesService {
     try {
       const places: any[] = await this.prisma.$queryRaw`
         SELECT 
-          p.id, p.name, p.slug, p.description, p.district, p."heroImage", p."bestSeason",
-          p.latitude, p.longitude,
+          p.id, p.name, p.slug, p."shortDescription" as description, p.latitude, p.longitude,
           ST_Distance(
             ST_SetSRID(ST_MakePoint(p.longitude, p.latitude), 4326)::geography,
             ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography
@@ -117,20 +259,74 @@ export class PlacesService {
       const allPlaces = await this.prisma.place.findMany({
         where: { 
           verified: true,
-          ...(district ? { district } : {}),
-          ...(block ? { block } : {}) 
+          ...(district ? { district: { name: district } } : {}),
+          ...(block ? { block: { name: block } } : {}) 
         },
-        include: { category: true, media: true }
+        include: { category: true, images: true, videos: true }
       });
 
       return allPlaces
         .map(place => {
           const distance = this.calculateDistance(lat, lng, place.latitude, place.longitude);
-          return { ...place, distance_km: distance };
+          return { 
+            id: place.id,
+            name: place.name,
+            slug: place.slug,
+            description: place.shortDescription,
+            heroImage: place.heroImage,
+            districtId: place.districtId,
+            latitude: place.latitude,
+            longitude: place.longitude,
+            distance_km: distance 
+          };
         })
         .filter(place => place.distance_km <= radiusKm)
         .sort((a, b) => a.distance_km - b.distance_km);
     }
+  }
+
+  async semanticSearch(query: string, limit: number = 5) {
+    if (!query || query.trim() === '') {
+      return [];
+    }
+
+    const allPlaces = await this.prisma.place.findMany({
+      where: { verified: true },
+      include: { category: true, images: true, videos: true }
+    });
+
+    const searchTerms = query.toLowerCase().split(/\s+/).filter(term => term.length > 2);
+
+    if (searchTerms.length === 0) {
+      return allPlaces
+        .filter(place => 
+          place.name.toLowerCase().includes(query.toLowerCase()) || 
+          (place.shortDescription || '').toLowerCase().includes(query.toLowerCase())
+        )
+        .slice(0, limit);
+    }
+
+    const matchedPlaces = allPlaces.map(place => {
+      let score = 0;
+      const name = place.name.toLowerCase();
+      const shortDesc = (place.shortDescription || '').toLowerCase();
+      const fullDesc = (place.fullDescription || '').toLowerCase();
+      const bestSeason = (place.bestSeason || '').toLowerCase();
+
+      searchTerms.forEach(term => {
+        if (name.includes(term)) score += 5.0;
+        if (shortDesc.includes(term)) score += 3.0;
+        if (fullDesc.includes(term)) score += 1.5;
+        if (bestSeason.includes(term)) score += 1.0;
+      });
+
+      return { ...place, similarity_score: score };
+    });
+
+    return matchedPlaces
+      .filter(place => place.similarity_score > 0)
+      .sort((a, b) => b.similarity_score - a.similarity_score)
+      .slice(0, limit);
   }
 
   private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -148,51 +344,4 @@ export class PlacesService {
   private deg2rad(deg: number): number {
     return deg * (Math.PI / 180);
   }
-
-  async semanticSearch(query: string, limit: number = 5) {
-    if (!query || query.trim() === '') {
-      return [];
-    }
-
-    const allPlaces = await this.prisma.place.findMany({
-      where: { verified: true },
-      include: { category: true, media: true }
-    });
-
-    const searchTerms = query.toLowerCase().split(/\s+/).filter(term => term.length > 2);
-
-    if (searchTerms.length === 0) {
-      return allPlaces
-        .filter(place => 
-          place.name.toLowerCase().includes(query.toLowerCase()) || 
-          place.description.toLowerCase().includes(query.toLowerCase())
-        )
-        .slice(0, limit);
-    }
-
-    const matchedPlaces = allPlaces.map(place => {
-      let score = 0;
-      const name = place.name.toLowerCase();
-      const description = place.description.toLowerCase();
-      const district = (place.district || '').toLowerCase();
-      const bestSeason = (place.bestSeason || '').toLowerCase();
-      const history = (place.history || '').toLowerCase();
-
-      searchTerms.forEach(term => {
-        if (name.includes(term)) score += 5.0;
-        if (district.includes(term)) score += 3.0;
-        if (description.includes(term)) score += 1.5;
-        if (bestSeason.includes(term)) score += 1.0;
-        if (history.includes(term)) score += 1.0;
-      });
-
-      return { ...place, similarity_score: score };
-    });
-
-    return matchedPlaces
-      .filter(place => place.similarity_score > 0)
-      .sort((a, b) => b.similarity_score - a.similarity_score)
-      .slice(0, limit);
-  }
 }
-

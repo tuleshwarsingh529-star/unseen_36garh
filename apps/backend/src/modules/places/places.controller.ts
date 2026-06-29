@@ -1,7 +1,10 @@
-import { Controller, Get, Post, Body, Param, Query, ParseFloatPipe, DefaultValuePipe, ValidationPipe } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiQuery, ApiParam, ApiBody } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Param, Query, ParseFloatPipe, DefaultValuePipe, ValidationPipe, UseGuards, Req, Patch, Delete } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiQuery, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { PlacesService } from './places.service';
 import { CreatePlaceDto } from './dto/create-place.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 
 @ApiTags('Places')
 @Controller('places')
@@ -9,10 +12,44 @@ export class PlacesController {
   constructor(private readonly placesService: PlacesService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN', 'MODERATOR', 'CREATOR')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Submit a new tourism destination (Contributor Upload)' })
   @ApiBody({ type: CreatePlaceDto, description: 'Required place parameters' })
-  async create(@Body(new ValidationPipe()) dto: CreatePlaceDto) {
-    return this.placesService.create(dto);
+  async create(
+    @Body(new ValidationPipe()) dto: CreatePlaceDto,
+    @Req() req: any,
+  ) {
+    return this.placesService.create(dto, req.user);
+  }
+
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN', 'MODERATOR', 'CREATOR')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update an existing destination' })
+  @ApiParam({ name: 'id', type: String })
+  @ApiBody({ type: CreatePlaceDto })
+  async update(
+    @Param('id') id: string,
+    @Body(new ValidationPipe()) dto: CreatePlaceDto,
+    @Req() req: any,
+  ) {
+    return this.placesService.update(id, dto, req.user);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN', 'MODERATOR')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete a destination record' })
+  @ApiParam({ name: 'id', type: String })
+  async delete(
+    @Param('id') id: string,
+    @Req() req: any,
+  ) {
+    return this.placesService.delete(id, req.user);
   }
 
   @Get()
@@ -32,6 +69,12 @@ export class PlacesController {
   @ApiOperation({ summary: 'Retrieve all experience categories' })
   async getCategories() {
     return this.placesService.getCategories();
+  }
+
+  @Get('districts')
+  @ApiOperation({ summary: 'Retrieve all districts and their landmarks' })
+  async getDistricts() {
+    return this.placesService.getDistricts();
   }
 
   @Get('nearby')

@@ -12,6 +12,12 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'plus.unsplash.com',
       },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '4000',
+        pathname: '/uploads/**',
+      },
     ],
   },
   async headers() {
@@ -51,6 +57,16 @@ const nextConfig: NextConfig = {
             value: 'camera=(), microphone=(), geolocation=(self)',
           },
         ],
+      },
+    ];
+  },
+  async rewrites() {
+    return [
+      {
+        // Proxy all /uploads/* requests to the NestJS backend static file server
+        // This allows frontend to use relative paths like /uploads/places/image.jpg
+        source: '/uploads/:path*',
+        destination: 'http://localhost:4000/uploads/:path*',
       },
     ];
   },

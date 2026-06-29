@@ -6,7 +6,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area
 } from "recharts";
 import { 
-  Layers, TrendingUp, AlertTriangle, CheckCircle, XCircle, Clock, Compass, Trees, Award, Users, ShieldAlert, UserPlus, LogOut, BookOpen, MapPin, Radio
+  Layers, TrendingUp, AlertTriangle, CheckCircle, XCircle, Clock, Compass, Trees, Award, Users, ShieldAlert, UserPlus, LogOut, BookOpen, MapPin, Radio, Plus, Trash2, Activity
 } from "lucide-react";
 import { useAuthStore } from "../../store/auth-store";
 
@@ -18,7 +18,7 @@ interface SosAlert { id: string; touristName?: string; latitude: number; longitu
 
 export default function AdminPage() {
   const { user, token } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<"traffic" | "eco" | "approvals" | "creator_backlog" | "users" | "folklore" | "sos">("traffic");
+  const [activeTab, setActiveTab] = useState<"traffic" | "eco" | "approvals" | "creator_backlog" | "users" | "folklore" | "sos" | "places_cms">("traffic");
 
   // Recharts Simulated Telemetry Datasets
   const seasonalTrafficData = [
@@ -55,6 +55,8 @@ export default function AdminPage() {
   const [loadingCreators, setLoadingCreators] = useState(false);
   const [loadingPlaces, setLoadingPlaces] = useState(false);
   const [loadingSos, setLoadingSos] = useState(false);
+  const [allPlaces, setAllPlaces] = useState<any[]>([]);
+  const [loadingAllPlaces, setLoadingAllPlaces] = useState(false);
 
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1";
 
@@ -134,6 +136,7 @@ export default function AdminPage() {
         fetchPendingFolklore();
         fetchPendingPlaces();
         fetchSosAlerts();
+        fetchAllPlaces();
       }, 0);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -148,6 +151,35 @@ export default function AdminPage() {
       });
       if (res.ok) {
         setUsers(users.map(u => u.id === userId ? { ...u, role: newRole } : u));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const fetchAllPlaces = async () => {
+    setLoadingAllPlaces(true);
+    try {
+      const res = await fetch(`${API}/places?includeUnverified=true`, { headers: authHeaders });
+      const data = await res.json();
+      if (res.ok) setAllPlaces(data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingAllPlaces(false);
+    }
+  };
+
+  const handleDeletePlace = async (id: string) => {
+    if (!confirm("Are you sure you want to permanently delete this landmark?")) return;
+    try {
+      const res = await fetch(`${API}/places/${id}`, {
+        method: "DELETE",
+        headers: authHeaders
+      });
+      if (res.ok) {
+        setAllPlaces(allPlaces.filter(p => p.id !== id));
+        setPendingPlaces(pendingPlaces.filter(p => p.id !== id));
       }
     } catch (e) {
       console.error(e);
@@ -241,6 +273,20 @@ export default function AdminPage() {
           <p className="text-sm text-charcoal-stone/75 max-w-xl leading-relaxed">
             Manage user roles, verify creator studios, approve destinations, monitor ecological payload metrics, and respond to SOS alerts.
           </p>
+          <div className="flex flex-wrap gap-2.5 mt-3">
+            <Link 
+              href="/admin/places/new"
+              className="px-4.5 py-2.5 bg-forest-emerald hover:bg-tribal-terracotta text-white rounded-xl text-xs font-sans font-bold flex items-center gap-1.5 shadow transition-colors"
+            >
+              <Plus className="w-4 h-4" /> Create New Place (CMS)
+            </Link>
+            <Link 
+              href="/admin/sync-monitor"
+              className="px-4.5 py-2.5 bg-white border border-charcoal-stone/15 hover:bg-sand-beige text-charcoal-stone rounded-xl text-xs font-sans font-bold flex items-center gap-1.5 shadow-sm transition-colors"
+            >
+              <Activity className="w-4 h-4 text-tribal-terracotta" /> ⚡ Real-Time Sync Monitor
+            </Link>
+          </div>
         </div>
 
         {/* Global Stats */}
@@ -271,6 +317,7 @@ export default function AdminPage() {
           { id: "eco", label: "Ecological Load Limits", icon: Trees },
           { id: "approvals", label: `Place Approvals (${pendingPlaces.length})`, icon: MapPin },
           { id: "creator_backlog", label: `Creator Verification (${pendingCreators.length})`, icon: Award },
+          { id: "places_cms", label: "All Places (CMS)", icon: Compass },
           { id: "folklore", label: `Folklore (${pendingFolklore.length})`, icon: BookOpen },
           { id: "users", label: "User Management", icon: Users },
           { id: "sos", label: `SOS Alerts (${sosAlerts.length})`, icon: Radio },
@@ -664,6 +711,86 @@ export default function AdminPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 8: All Places (CMS) [NEW] */}
+      {activeTab === "places_cms" && (
+        <div className="glass-panel p-6 sm:p-8 rounded-3xl shadow-xl border border-white/60 bg-white/70 flex flex-col gap-6">
+          <div className="flex flex-col gap-1 border-b border-charcoal-stone/10 pb-4">
+            <span className="text-[9px] font-mono text-forest-emerald font-bold uppercase">Landmark Catalog Index</span>
+            <h3 className="font-sans font-bold text-lg text-forest-emerald">All Destination Log Records</h3>
+          </div>
+
+          {loadingAllPlaces ? (
+            <div className="py-12 flex items-center justify-center">
+              <Compass className="w-8 h-8 text-forest-emerald animate-spin" />
+            </div>
+          ) : (
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-charcoal-stone/20 text-charcoal-stone/50 font-mono uppercase tracking-wider">
+                    <th className="py-3 px-4">Place Name</th>
+                    <th className="py-3 px-4">District</th>
+                    <th className="py-3 px-4">Category</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4">Creator ID</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-charcoal-stone/10">
+                  {allPlaces.map((place) => (
+                    <tr key={place.id} className="hover:bg-white/40 transition-colors">
+                      <td className="py-4 px-4 font-sans font-bold text-forest-emerald flex items-center gap-2">
+                        {place.featuredImage && (
+                          <img src={place.featuredImage} className="w-8 h-8 object-cover rounded-lg border border-charcoal-stone/10" alt="" />
+                        )}
+                        {place.name}
+                      </td>
+                      <td className="py-4 px-4">{place.district?.name || "Bastar"}</td>
+                      <td className="py-4 px-4 font-mono">{place.category?.name || "waterfalls"}</td>
+                      <td className="py-4 px-4">
+                        <span className={`px-2.5 py-1 rounded font-mono text-[9px] font-bold ${
+                          place.status === 'PUBLISHED' ? 'bg-green-100 text-green-700' :
+                          place.status === 'REJECTED' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          {place.status}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 font-mono text-charcoal-stone/50 truncate max-w-[120px]">
+                        {place.creatorId || "ADMIN_SEED"}
+                      </td>
+                      <td className="py-4 px-4 text-right">
+                        <div className="flex justify-end gap-2">
+                          <Link 
+                            href={`/destination/${place.slug || place.id}`}
+                            className="bg-white hover:bg-sand-beige text-charcoal-stone border border-charcoal-stone/15 px-3 py-1.5 rounded text-[10px] font-bold transition-all"
+                          >
+                            View
+                          </Link>
+                          <button
+                            onClick={() => handleDeletePlace(place.id)}
+                            className="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1.5 rounded text-[10px] font-bold transition-all flex items-center gap-1.5"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" /> Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+
+                  {allPlaces.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="py-12 text-center text-charcoal-stone/40">
+                        No tourism records found in the database.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           )}
         </div>

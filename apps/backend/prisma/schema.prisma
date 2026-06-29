@@ -17,7 +17,11 @@ model User {
   email         String          @unique
   password      String
   avatar        String?
-  role          String          @default("USER")
+  bio           String?
+  role          String          @default("USER") // USER | CREATOR | MODERATOR | ADMIN | SUPER_ADMIN
+  isVerified    Boolean         @default(false)
+  isActive      Boolean         @default(true)
+  phone         String?
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
@@ -25,8 +29,14 @@ model User {
   reviews        Review[]
   folklore       Folklore[]
   bookings       Booking[]
+  createdPlaces  Place[]         @relation("CreatorPlaces")
   creatorProfile CreatorProfile?
   refreshTokens  RefreshToken[]
+  itineraries    Itinerary[]
+  followers      Follower[]      @relation("FollowedUser")
+  following      Follower[]      @relation("FollowingUser")
+  storyComments  StoryComment[]
+  storyLikes     StoryLike[]
 }
 
 model RefreshToken {
@@ -41,8 +51,302 @@ model RefreshToken {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CONTENT MODELS
+// GEOGRAPHY MODELS
 // ─────────────────────────────────────────────────────────────────────────────
+
+model District {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  slug        String    @unique @default("")
+  description String?
+  image       String?
+  coverImage  String?
+  bannerImage String?
+  population  Int?
+  area        Float?    // sq km
+  headquarters String?
+  latitude    Float?
+  longitude   Float?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt @default(now())
+
+  places     Place[]
+  blocks     Block[]
+  festivals  Festival[]
+  localFoods LocalFood[]
+  cultures   Culture[]
+  hotels     Hotel[]
+  restaurants Restaurant[]
+  stories    CreatorStory[]
+  mediaLibrary MediaLibrary[]
+}
+
+model Block {
+  id          String    @id @default(uuid())
+  districtId  String
+  name        String
+  slug        String    @unique
+  description String?
+  latitude    Float?
+  longitude   Float?
+  createdAt   DateTime  @default(now())
+
+  district    District  @relation(fields: [districtId], references: [id], onDelete: Cascade)
+  places      Place[]
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONTENT CLASSIFICATION
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String
+  slug        String    @unique
+  description String?
+  icon        String?   // emoji or icon name
+  color       String?   // hex color for UI
+  sortOrder   Int?      @default(0)
+
+  places      Place[]
+  stories     CreatorStory[]
+}
+
+model Tag {
+  id     String     @id @default(uuid())
+  name   String     @unique
+  slug   String     @unique @default("")
+
+  places PlaceTag[]
+}
+
+model PlaceTag {
+  placeId String
+  tagId   String
+
+  place   Place @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  tag     Tag   @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([placeId, tagId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PLACE / DESTINATION MODEL
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Place {
+  id                   String    @id @default(uuid())
+  // Relations — optional so places can be saved as incomplete DRAFT
+  districtId           String?
+  blockId              String?
+  categoryId           String?
+  creatorId            String?
+
+  // Core identity
+  name                 String
+  slug                 String    @unique
+  shortDescription     String?
+  fullDescription      String?
+  history              String?
+  significance         String?
+  thingsToDo           String?
+  travelTips           String?
+
+  // Geography
+  address              String?
+  latitude             Float     @default(0)
+  longitude            Float     @default(0)
+  googleMapUrl         String?
+  altitude             Float?    // metres above sea level
+  nearestCity          String?
+  nearestRailway       String?
+  nearestAirport       String?
+  distanceFromCity     Int?      // km
+
+  // Visit info
+  bestSeason           String?
+  openingTime          String?
+  closingTime          String?
+  entryFee             Float?
+  weeklyHoliday        String?
+
+  // Facilities checklist
+  parkingAvailable     Boolean   @default(false)
+  foodAvailable        Boolean   @default(false)
+  guideAvailable       Boolean   @default(false)
+  wheelchairAccessible Boolean   @default(false)
+  washroomAvailable    Boolean   @default(false)
+  petFriendly          Boolean   @default(false)
+  photographyAllowed   Boolean   @default(true)
+  droneAllowed         Boolean   @default(false)
+
+  // Contact & web
+  contactNumber        String?
+  website              String?
+
+  // Media
+  featuredImage        String?
+  heroImage            String?   // alias for featuredImage — backwards compat
+  audioUrl             String?
+  audioNarrator        String?
+  panoramaUrls         String    @default("[]")
+
+  // SEO
+  metaTitle            String?
+  metaDescription      String?
+  metaKeywords         String?
+
+  // Publication control
+  status               String    @default("DRAFT")  // DRAFT | SUBMITTED | UNDER_REVIEW | PUBLISHED | FEATURED | REJECTED | ARCHIVED
+  verified             Boolean   @default(false)
+  priority             String    @default("medium")  // low | medium | high
+  viewCount            Int       @default(0)
+
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  // Relations
+  creator   User?      @relation("CreatorPlaces", fields: [creatorId], references: [id])
+  district  District?  @relation(fields: [districtId], references: [id])
+  block     Block?     @relation(fields: [blockId], references: [id])
+  category  Category?  @relation(fields: [categoryId], references: [id])
+
+  images    Image[]
+  videos    Video[]
+  reviews   Review[]
+  bookmarks Bookmark[]
+  bookings  Booking[]
+  documents PlaceDocument[]
+  tags      PlaceTag[]
+  stories   CreatorStory[]
+  mediaLibrary MediaLibrary[]
+
+  @@index([districtId])
+  @@index([categoryId])
+  @@index([status])
+  @@index([verified])
+  @@index([latitude, longitude])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MEDIA MODELS
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Image {
+  id           String    @id @default(uuid())
+  placeId      String
+  imageUrl     String
+  thumbnailUrl String?
+  caption      String?
+  altText      String?
+  photographer String?
+  fileSize     Int?
+  width        Int?
+  height       Int?
+  mimeType     String?
+  isFeatured   Boolean   @default(false)
+  displayOrder Int       @default(0)
+  uploadedBy   String?
+  uploadedAt   DateTime  @default(now())
+
+  place        Place     @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  @@index([placeId])
+}
+
+model Video {
+  id           String    @id @default(uuid())
+  placeId      String
+  title        String?
+  videoUrl     String
+  thumbnailUrl String?
+  description  String?
+  duration     Int?      // seconds
+  resolution   String?
+  fileSize     Int?
+  mimeType     String?
+  uploadedBy   String?
+  uploadedAt   DateTime  @default(now())
+
+  place        Place     @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  @@index([placeId])
+}
+
+model PlaceDocument {
+  id           String   @id @default(uuid())
+  placeId      String
+  documentName String
+  documentUrl  String
+  type         String?  // permit | certificate | brochure | map
+  uploadedBy   String?
+  uploadedAt   DateTime @default(now())
+
+  place        Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
+}
+
+model MediaUpload {
+  id               String   @id @default(uuid())
+  type             String   // image | video | document
+  fileName         String
+  originalName     String?
+  storagePath      String
+  fileSize         Int?
+  mimeType         String?
+  status           String   @default("PENDING") // PENDING | COMPLETED | FAILED
+  processingStatus String?
+  uploadedBy       String?
+  placeId          String?
+  createdAt        DateTime @default(now())
+
+  @@index([uploadedBy])
+  @@index([placeId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CULTURAL & HERITAGE MODELS
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Festival {
+  id          String    @id @default(uuid())
+  districtId  String
+  name        String
+  slug        String?   @unique
+  description String?
+  dateInfo    String?   // e.g. "January to February"
+  month       Int?      // 1–12 for filtering
+  image       String?
+  featured    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt @default(now())
+
+  district    District  @relation(fields: [districtId], references: [id], onDelete: Cascade)
+}
+
+model LocalFood {
+  id          String    @id @default(uuid())
+  districtId  String
+  name        String
+  description String?
+  image       String?
+  ingredients String?
+  isVegetarian Boolean  @default(true)
+  createdAt   DateTime  @default(now())
+
+  district    District  @relation(fields: [districtId], references: [id], onDelete: Cascade)
+}
+
+model Culture {
+  id          String    @id @default(uuid())
+  districtId  String
+  type        String    // dance | music | handicraft | folklore | tradition
+  title       String
+  description String?
+  image       String?
+  createdAt   DateTime  @default(now())
+
+  district    District  @relation(fields: [districtId], references: [id], onDelete: Cascade)
+}
 
 model Folklore {
   id            String   @id @default(uuid())
@@ -50,11 +354,11 @@ model Folklore {
   monument      String
   location      String
   description   String
-  images        String   @default("[]")
-  videos        String   @default("[]")
+  images        String   @default("[]")  // JSON array of URLs
+  videos        String   @default("[]")  // JSON array of URLs
   audioUrl      String?
   audioNarrator String?
-  verified      Boolean  @default(true)
+  verified      Boolean  @default(false)
   authorId      String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -62,86 +366,124 @@ model Folklore {
   author        User     @relation(fields: [authorId], references: [id])
 }
 
-model Place {
-  id            String   @id @default(uuid())
-  name          String
-  slug          String   @unique
-  description   String
-  district      String
-  block         String?
-  categoryId    String
+// ─────────────────────────────────────────────────────────────────────────────
+// HOSPITALITY MODELS
+// ─────────────────────────────────────────────────────────────────────────────
 
-  latitude      Float
-  longitude     Float
+model Hotel {
+  id           String    @id @default(uuid())
+  districtId   String?
+  name         String
+  slug         String    @unique @default("")
+  description  String?
+  address      String?
+  latitude     Float?
+  longitude    Float?
+  starRating   Int?      // 1–5
+  priceRange   String?   // budget | mid | luxury
+  phone        String?
+  email        String?
+  website      String?
+  featuredImage String?
+  amenities    String    @default("[]")  // JSON array
+  status       String    @default("ACTIVE")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt @default(now())
 
-  heroImage     String
-  bestSeason    String?
+  district     District? @relation(fields: [districtId], references: [id])
 
-  history       String?
-  safetyInfo    String?
-  rules         String?
-  audioUrl      String?
-  audioNarrator String?
-
-  verified      Boolean  @default(true)
-
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  category    Category  @relation(fields: [categoryId], references: [id])
-  media       Media[]
-  reviews     Review[]
-  bookmarks   Bookmark[]
-  bookings    Booking[]
+  @@index([districtId])
 }
 
-model Category {
-  id     String  @id @default(uuid())
-  name   String
-  slug   String  @unique
+model Restaurant {
+  id           String    @id @default(uuid())
+  districtId   String?
+  name         String
+  slug         String    @unique @default("")
+  description  String?
+  address      String?
+  latitude     Float?
+  longitude    Float?
+  cuisineType  String?   // indian | tribal | mughlai | continental | multi
+  priceRange   String?   // budget | mid | premium
+  phone        String?
+  website      String?
+  featuredImage String?
+  isVegetarian Boolean   @default(false)
+  status       String    @default("ACTIVE")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt @default(now())
 
-  places Place[]
+  district     District? @relation(fields: [districtId], references: [id])
+
+  @@index([districtId])
 }
 
-model Media {
-  id      String @id @default(uuid())
-  url     String
-  type    String @default("IMAGE")
-  placeId String
+// ─────────────────────────────────────────────────────────────────────────────
+// CREATOR PROGRAM
+// ─────────────────────────────────────────────────────────────────────────────
 
-  place   Place  @relation(fields: [placeId], references: [id])
+model CreatorProfile {
+  id             String    @id @default(uuid())
+  userId         String    @unique
+  displayName    String?
+  username       String?   @unique
+  bio            String?
+  districtId     String?
+  profileImage   String?
+  coverImage     String?
+  followersCount Int       @default(0)
+  followingCount Int       @default(0)
+  totalStories   Int       @default(0)
+  totalViews     Int       @default(0)
+  isVerified     Boolean   @default(false)
+  status         String    @default("ACTIVE") // ACTIVE | INACTIVE | PENDING
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt @default(now())
+
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stories        CreatorStory[]
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ENGAGEMENT MODELS
+// ─────────────────────────────────────────────────────────────────────────────
 
 model Review {
-  id        String   @id @default(uuid())
-  rating    Int      // 1–5 stars
+  id        String    @id @default(uuid())
+  rating    Int       // 1–5 stars
+  title     String?
   comment   String
-  lang      String   @default("en") // Language the review was written in
-  helpful   Int      @default(0)    // Helpful votes
+  lang      String    @default("en")
+  helpful   Int       @default(0)
+  reported  Boolean   @default(false)
+  status    String    @default("APPROVED") // PENDING | APPROVED | REJECTED
 
   userId    String
   placeId   String
 
-  user      User     @relation(fields: [userId], references: [id])
-  place     Place    @relation(fields: [placeId], references: [id])
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  place     Place     @relation(fields: [placeId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@index([placeId])
   @@index([userId])
+  @@index([rating])
 }
 
 model Bookmark {
-  id      String @id @default(uuid())
+  id        String    @id @default(uuid())
+  userId    String
+  placeId   String
+  createdAt DateTime  @default(now())
 
-  userId  String
-  placeId String
-
-  user    User  @relation(fields: [userId], references: [id])
-  place   Place @relation(fields: [placeId], references: [id])
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  place     Place     @relation(fields: [placeId], references: [id], onDelete: Cascade)
 
   @@unique([userId, placeId])
+  @@index([userId])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -149,38 +491,49 @@ model Bookmark {
 // ─────────────────────────────────────────────────────────────────────────────
 
 model Booking {
-  id          String   @id @default(uuid())
-  userId      String
-  placeId     String
-  visitDate   DateTime
-  guests      Int      @default(1)
-  totalPrice  Float    @default(0)
-  status      String   @default("CONFIRMED")  // CONFIRMED | CANCELLED | COMPLETED
-  notes       String?
+  id           String    @id @default(uuid())
+  userId       String
+  placeId      String
+  visitDate    DateTime
+  guests       Int       @default(1)
+  totalPrice   Float     @default(0)
+  status       String    @default("CONFIRMED") // CONFIRMED | CANCELLED | COMPLETED | NO_SHOW
+  notes        String?
   contactPhone String?
+  paymentRef   String?
 
-  user        User     @relation(fields: [userId], references: [id])
-  place       Place    @relation(fields: [placeId], references: [id])
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  place        Place     @relation(fields: [placeId], references: [id], onDelete: Cascade)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   @@index([userId])
   @@index([placeId])
   @@index([visitDate])
+  @@index([status])
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// AI & TRIP PLANNER
+// ─────────────────────────────────────────────────────────────────────────────
 
-model CreatorProfile {
-  id       String  @id @default(uuid())
-  userId   String  @unique
+model Itinerary {
+  id            String    @id @default(uuid())
+  userId        String
+  title         String
+  budget        Float?
+  days          Int
+  season        String?
+  startDistrict String?
+  interests     String    @default("[]")  // JSON array
+  generatedByAi Boolean   @default(true)
+  content       String?   // Full AI-generated itinerary text
+  createdAt     DateTime  @default(now())
 
-  verified  Boolean @default(true)
-  bio       String?
-  instagram String?
-  youtube   String?
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  user      User    @relation(fields: [userId], references: [id])
+  @@index([userId])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -195,44 +548,48 @@ model EmergencyAlert {
   medicalNotes     String?
   latitude         Float
   longitude        Float
-  status           String    @default("DISPATCHED")
+  status           String    @default("DISPATCHED") // DISPATCHED | EN_ROUTE | RESOLVED | CANCELLED
   primaryResponder String
   createdAt        DateTime  @default(now())
   resolvedAt       DateTime?
+
+  @@index([status])
 }
 
-/// Dynamic registry of rescue stations — replaces the hardcoded REGIONAL_STATIONS array.
-/// Government admin panel can add / edit these without code deployments.
 model EmergencyStation {
-  id        String  @id @default(uuid())
+  id        String    @id @default(uuid())
   name      String
   phone     String
-  type      String  // 'police' | 'hospital' | 'ranger'
+  type      String    // police | hospital | ranger | fire | ambulance
   district  String
+  address   String?
   latitude  Float
   longitude Float
-  active    Boolean @default(true)
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
 
   @@index([district])
   @@index([type])
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// INTERNATIONALISATION / TRANSLATIONS
+// ─────────────────────────────────────────────────────────────────────────────
+
 model Translation {
   id         String   @id @default(uuid())
-  lang       String   // "en", "hi", "cg", "gondi", "halbi"
-  entityType String   // "Place", "Category", "Folklore"
+  lang       String   // en | hi | cg | gondi | halbi | odia
+  entityType String   // Place | Category | District | Folklore
   entityId   String
-  field      String   // "name", "description", "tagline", "story"
+  field      String   // name | description | tagline | story | safetyInfo | rules | bestSeason
   value      String
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
   @@unique([lang, entityType, entityId, field])
+  @@index([entityType, entityId])
+  @@index([lang])
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// LIVE TRANSLATION CACHE (Google Cloud Translate API results)
-// ─────────────────────────────────────────────────────────────────────────────
 
 model TranslationCache {
   id          String   @id @default(uuid())
@@ -247,3 +604,225 @@ model TranslationCache {
   @@index([targetLang])
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// ANALYTICS & ACTIVITY LOGS
+// ─────────────────────────────────────────────────────────────────────────────
+
+model ActivityLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  action     String   // PLACE_CREATED | PLACE_PUBLISHED | USER_REGISTERED | REVIEW_ADDED ...
+  entityType String?  // Place | User | Review | Booking ...
+  entityId   String?
+  meta       String   @default("{}") // JSON extra data
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model PageView {
+  id        String   @id @default(uuid())
+  placeId   String?
+  path      String
+  sessionId String?
+  userId    String?
+  country   String?
+  device    String?  // mobile | tablet | desktop
+  createdAt DateTime @default(now())
+
+  @@index([placeId])
+  @@index([path])
+  @@index([createdAt])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CREATOR STORIES & SOCIAL SYSTEM
+// ─────────────────────────────────────────────────────────────────────────────
+
+model CreatorStory {
+  id          String   @id @default(uuid())
+  creatorId   String   // links to CreatorProfile.id
+  placeId     String?
+  districtId  String?
+  categoryId  String?
+  title       String
+  slug        String   @unique @default("")
+  description String?
+  storyType   String   @default("video") // image | video | gallery | reel
+  coverImage  String?
+  videoUrl    String?
+  language    String   @default("en")
+  visibility  String   @default("PUBLIC") // PUBLIC | PRIVATE
+  status      String   @default("PENDING") // DRAFT | PENDING | APPROVED | PUBLISHED | REJECTED
+  featured    Boolean  @default(false)
+  
+  views       Int      @default(0)
+  likes       Int      @default(0)
+  shares      Int      @default(0)
+  comments    Int      @default(0)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  publishedAt DateTime?
+
+  creator     CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  place       Place?         @relation(fields: [placeId], references: [id], onDelete: SetNull)
+  district    District?      @relation(fields: [districtId], references: [id], onDelete: SetNull)
+  category    Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  
+  media       StoryMedia[]
+  storyComments StoryComment[]
+  storyLikes    StoryLike[]
+  locations   StoryLocation[]
+  statistics  StoryStatistics?
+  tags        StoryTag[]
+
+  @@index([creatorId])
+  @@index([placeId])
+  @@index([districtId])
+  @@index([categoryId])
+  @@index([status])
+}
+
+model StoryMedia {
+  id           String   @id @default(uuid())
+  storyId      String
+  mediaType    String   // image | video
+  fileName     String?
+  filePath     String
+  thumbnail    String?
+  caption      String?
+  displayOrder Int      @default(0)
+  fileSize     Int?
+  mimeType     String?
+  createdAt    DateTime @default(now())
+
+  story        CreatorStory @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@index([storyId])
+}
+
+model StoryLocation {
+  id           String   @id @default(uuid())
+  storyId      String
+  latitude     Float
+  longitude    Float
+  googleMap    String?
+  nearestPlace String?
+
+  story        CreatorStory @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@index([storyId])
+}
+
+model StoryStatistics {
+  storyId    String   @id
+  views      Int      @default(0)
+  likes      Int      @default(0)
+  comments   Int      @default(0)
+  shares     Int      @default(0)
+  bookmarks  Int      @default(0)
+  lastViewed DateTime?
+
+  story      CreatorStory @relation(fields: [storyId], references: [id], onDelete: Cascade)
+}
+
+model StoryTag {
+  id        String   @id @default(uuid())
+  storyId   String
+  tagId     String
+  name      String
+
+  story     CreatorStory @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@index([storyId])
+}
+
+model StoryComment {
+  id        String   @id @default(uuid())
+  storyId   String
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  story     CreatorStory @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([storyId])
+  @@index([userId])
+}
+
+model StoryLike {
+  id        String   @id @default(uuid())
+  storyId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  story     CreatorStory @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([storyId, userId])
+  @@index([storyId])
+  @@index([userId])
+}
+
+model Follower {
+  id          String   @id @default(uuid())
+  followerId  String
+  followedId  String
+  createdAt   DateTime @default(now())
+
+  follower    User     @relation("FollowingUser", fields: [followerId], references: [id], onDelete: Cascade)
+  followed    User     @relation("FollowedUser", fields: [followedId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followedId])
+  @@index([followerId])
+  @@index([followedId])
+}
+
+model MediaLibrary {
+  id             String    @id @default(uuid())
+  placeId        String?
+  districtId     String?
+  mediaType      String    // image | video
+  title          String
+  filePath       String    @unique
+  thumbnail      String?
+  caption        String?
+  photographer   String?   @default("CG Tourism")
+  copyrightOwner String?   @default("Department of Tourism")
+  licenseType    String?   @default("PUBLIC_DOMAIN")
+  source         String?   @default("LOCAL_INDEXER")
+  status         String    @default("APPROVED") // PENDING | APPROVED | REJECTED
+  createdAt      DateTime  @default(now())
+
+  place          Place?    @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  district       District? @relation(fields: [districtId], references: [id], onDelete: SetNull)
+
+  @@index([placeId])
+  @@index([districtId])
+}
+
+model AdminSetting {
+  key         String   @id
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt @default(now())
+}
+
+model SyncEvent {
+  id           String   @id @default(uuid())
+  entityId     String
+  eventType    String   // story.created | story.approved | media.uploaded
+  status       String   // PENDING | PROCESSING | COMPLETED | FAILED
+  steps        String   // JSON array of verification steps: [{step: 'DB', status: 'Success'}]
+  retries      Int      @default(0)
+  errorMessage String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt @default(now())
+}

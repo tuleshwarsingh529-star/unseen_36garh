@@ -1,4 +1,4 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Post, Param } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { CreatorsFeedService } from './creators-feed.service';
 
@@ -11,6 +11,12 @@ export class CreatorsFeedController {
   @ApiOperation({ summary: 'Get global real-time creators feed from YouTube and Instagram' })
   async getGlobalFeed() {
     return this.feedService.getGlobalFeed();
+  }
+
+  @Post('sync')
+  @ApiOperation({ summary: 'Trigger real-time synchronization with YouTube and Instagram APIs' })
+  async syncFeed() {
+    return this.feedService.syncFeed();
   }
 
   @Get(':creatorId')

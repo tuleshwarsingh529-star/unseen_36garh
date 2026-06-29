@@ -124,7 +124,7 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="mt-2 w-full bg-tribal-terracotta hover:bg-red-800 text-sand-beige font-bold py-3.5 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 group disabled:opacity-50"
+            className="mt-2 w-full bg-tribal-terracotta hover:bg-red-800 text-sand-beige font-bold py-3.5 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 group disabled:opacity-50 cursor-pointer"
           >
             {loading ? "Registering..." : (
               <>
@@ -134,6 +134,25 @@ export default function RegisterPage() {
             )}
           </button>
         </form>
+
+        {/* Demo Register Quick Fill */}
+        <div className="mt-6 p-4 rounded-2xl bg-tribal-terracotta/5 border border-tribal-terracotta/10 flex flex-col gap-2">
+          <span className="text-[10px] font-mono font-bold text-tribal-terracotta uppercase tracking-wider text-center block">
+            ⚡ Quick-Fill Registry Data
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              const rand = Math.floor(Math.random() * 10000);
+              setFullName("Civilian Explorer");
+              setEmail(`explorer.${rand}@cgtourism.org`);
+              setPassword("ExplorerSecurePassword2026!");
+            }}
+            className="w-full px-3 py-2 text-xs font-bold text-tribal-terracotta bg-white/80 border border-tribal-terracotta/20 rounded-xl hover:bg-tribal-terracotta hover:text-white transition-all shadow-sm cursor-pointer text-center"
+          >
+            🚶 Generate Demo Citizen Details
+          </button>
+        </div>
 
         <div className="mt-8 pt-6 border-t border-charcoal-stone/10 text-center flex flex-col gap-2">
           <span className="text-xs text-charcoal-stone/60">

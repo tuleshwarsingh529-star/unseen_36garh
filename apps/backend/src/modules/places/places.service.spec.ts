@@ -38,12 +38,12 @@ describe('PlacesService Unit Tests', () => {
     it('should sanitize names with special characters into clean lowercase slugs', async () => {
       const createDto = {
         name: '  Chitrakote Waterfalls Peak!!!  ',
-        description: 'Widest waterfall cascade in India.',
-        district: 'Bastar',
+        shortDescription: 'Widest waterfall cascade in India.',
+        districtId: 'bastar-uuid',
         categoryId: 'waterfalls-uuid',
         latitude: 19.2006,
         longitude: 81.6961,
-        heroImage: 'https://images.unsplash.com/photo-1628105740446-c2ba68bf65ef',
+        featuredImage: 'https://images.unsplash.com/photo-1628105740446-c2ba68bf65ef',
       };
 
       prismaMock.place.findUnique.mockResolvedValue(null);
@@ -59,12 +59,12 @@ describe('PlacesService Unit Tests', () => {
     it('should throw BadRequestException if a matching slug already exists', async () => {
       const createDto = {
         name: 'Chitrakote Falls',
-        description: 'Widest waterfall cascade in India.',
-        district: 'Bastar',
+        shortDescription: 'Widest waterfall cascade in India.',
+        districtId: 'bastar-uuid',
         categoryId: 'waterfalls-uuid',
         latitude: 19.2006,
         longitude: 81.6961,
-        heroImage: 'https://images.unsplash.com/photo-1628105740446-c2ba68bf65ef',
+        featuredImage: 'https://images.unsplash.com/photo-1628105740446-c2ba68bf65ef',
       };
 
       // Mock database conflict hit

@@ -12,13 +12,14 @@ const SEED_DESTINATIONS = [
     tagline: "The Majestic 'Niagara of India'",
     latitude: 19.2006,
     longitude: 81.6961,
-    heroImage: "https://images.unsplash.com/photo-1432405972618-c60002a157c5?auto=format&fit=crop&w=1200&q=80",
+    heroImage: "/chitrakote.png",
     story: "According to ancient Bastar folk belief, the Indravati river is a mother goddess descending from the heavens. Chitrakote is where she showcases her supreme cosmic energy (Shakti). Local tribal elders narrate that during the monsoon, the heavy roar of the waterfall represents the celestial drums of Lord Shiva. The mist rising from the gorge is believed to carry the prayers of the forest spirits directly to the heavens.",
     bestTime: "July to October (Monsoon flow is jaw-dropping); November to February (Scenic emerald water)",
     safety: "Stay strictly within designated security railings. Do not attempt swimming in the base whirlpools under any conditions. Watch for wet, slippery stone structures.",
     ecoGuidance: "Chhattisgarh state environmental protection rules strictly prohibit carrying plastic water bottles or packages down to the river bank. Bring reusable flasks. Ensure zero litter is left behind to safeguard the pristine aquatic life of the Indravati.",
     audioUrl: "/audio/chitrakote_falls.mp3",
-    audioNarrator: "Aarav Mandavi"
+    audioNarrator: "Aarav Mandavi",
+    panoramaUrls: ["/chitrakote.png"]
   },
   {
     slug: "sirpur-monuments",
@@ -28,7 +29,7 @@ const SEED_DESTINATIONS = [
     tagline: "Ancient Crimson Brickwork & Lost Dynasties",
     latitude: 21.3414,
     longitude: 82.1764,
-    heroImage: "https://images.unsplash.com/photo-1514222134-b57cbb8ce073?auto=format&fit=crop&w=1200&q=80",
+    heroImage: "/sirpur.png",
     story: "Sirpur, historically known as Shripura, was the ancient capital of Panduvansh kings in the 6th century. The centerpiece, Laxman Temple, stands as one of the finest surviving brick temples in India. Constructed with intricately carved red clay bricks, it was funded by Queen Vasata in memory of her late husband. Archaeological excavations reveal that Sirpur was a major international center for Buddhist, Hindu, and Jain learning, outdating even the famous Nalanda University.",
     bestTime: "October to March (Mild weather ideal for outdoor archaeological exploration)",
     safety: "Do not touch or lean on ancient brick friezes and stone carvings. Keep voice levels low inside the hollow main sanctum to preserve its tranquil energy.",
@@ -44,7 +45,7 @@ const SEED_DESTINATIONS = [
     tagline: "The 'Khajuraho of Chhattisgarh'",
     latitude: 22.1158,
     longitude: 81.1542,
-    heroImage: "https://images.unsplash.com/photo-1582555172866-1c863b4a2e55?auto=format&fit=crop&w=1200&q=80",
+    heroImage: "/bhoramdeo.png",
     story: "Nestled in the lush Maikal Hills, Bhoramdeo was built by King Ramachandra of the Phani Nagvanshi dynasty in the 11th century. Dedicated to Lord Shiva, its design blends Nagara temple style with local tribal Gond symbolism. The temple walls are carved with incredible depictions of mythological deities, warriors, mythical beasts, and sensual carvings. It gets its name from 'Bhoramdeo', an ancient tribal deity of the Gond community who is worshipped here alongside Shiva.",
     bestTime: "November to March. The sacred Shivratri festival in March brings vibrant local fairs.",
     safety: "Monkeys inhabit the temple trees; keep foodstuffs inside zip bags. Maintain respectful attire inside the active inner sanctum.",
@@ -58,7 +59,7 @@ const SEED_DESTINATIONS = [
     tagline: "Pristine Sal Canopies & Subterranean Caves",
     latitude: 18.8789,
     longitude: 81.8596,
-    heroImage: "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1200&q=80",
+    heroImage: "/kanger.png",
     story: "Covering 200 sq km of dense, untouched forest, Kanger Valley is one of the most biodiverse zones in central India. It is famous for the Bastar Hill Myna (the official state bird) which can mimic human speech. The park hides ancient geological limestone formations like the Kutumsar Caves. Deep inside these damp, pitch-black chambers live unique blind and transparent fish species, adapted over millions of years of complete isolation.",
     bestTime: "November to May (Caves are accessible and wildlife spotting is highly active)",
     safety: "Never wander off marked forest trails. Kutumsar Caves have narrow crevices and low oxygen levels deep inside; visitors with breathing conditions should remain in the wider cavern halls.",
@@ -72,7 +73,7 @@ const SEED_DESTINATIONS = [
     tagline: "The Milky-White Cascade of Kanger River",
     latitude: 18.9161,
     longitude: 81.8654,
-    heroImage: "https://images.unsplash.com/photo-1462206634354-94578051759d?auto=format&fit=crop&w=1200&q=80",
+    heroImage: "/tirathgarh.png",
     story: "Tirathgarh Falls is a block-type waterfall where the Kanger River drops 300 feet in multiple layered steps. The water breaks into countless white streams, giving it a stunning milky appearance, often referred to as 'the forest queen's silk sari.' A small, ancient temple dedicated to Shiva stands on one of the rocky steps of the cascade, where hermits used to meditate amid the roaring water.",
     bestTime: "September to January (Monsoon runoff transitions to highly detailed, step-wise flows)",
     safety: "Steps leading down are extremely steep and can become slick with moss. Walk slowly and hold the handrails. Do not cross warning signs placed near deep water drop-offs.",
@@ -86,7 +87,7 @@ const SEED_DESTINATIONS = [
     tagline: "Lush Teak Forests & Sanctuary of the Indian Bison",
     latitude: 21.4012,
     longitude: 82.4208,
-    heroImage: "https://images.unsplash.com/photo-1561731216-c3a4d99437d5?auto=format&fit=crop&w=1200&q=80",
+    heroImage: "/barnawapara.png",
     story: "Covering 244 sq km of deciduous forests, Barnawapara is named after twin forest villages: Bar and Nawa Para. Local folklore integrates this forest with the epic Ramayana; it is believed that Sage Valmiki's ashram was located here, where Luv and Kush were born. Today, it is a crucial conservation zone for the Gaur (Indian Bison), Leopards, Sloth Bears, and over 150 species of vibrant tropical birds.",
     bestTime: "November to April (Optimal foliage for mammal spotting and migratory birds)",
     safety: "Do not wear bright colors (red, white) during safaris. Remain strictly inside the safari vehicle. Never try to feed or call out to wild animals.",
@@ -100,7 +101,7 @@ const SEED_DESTINATIONS = [
     tagline: "Lost in the Sal-Teak Heartland of Central India",
     latitude: 22.5300,
     longitude: 81.8800,
-    heroImage: "https://images.unsplash.com/photo-1589656966895-2f331719b5d9?auto=format&fit=crop&w=1200&q=80",
+    heroImage: "/achanakmar.png",
     story: "Achanakmar Tiger Reserve sprawls across the Maikal Hills, a forgotten highland corridor linking Kanha and Pench tiger reserves. Ancient tribal communities have coexisted with the forest's tigers for centuries, developing sacred groves ('Dev Vans') where no trees are ever felled. Local oral tradition holds that the spirit of the forest tiger is the guardian of the tribal boundary — its roar signals both danger and protection.",
     bestTime: "November to March (Peak wildlife activity and dry-season water pooling)",
     safety: "Stay inside safari vehicles at all times. Do not use flash photography near wildlife. Maintain strict silence near waterholes and salt licks.",
@@ -114,7 +115,7 @@ const SEED_DESTINATIONS = [
     tagline: "The Largest Reservoir of Chhattisgarh",
     latitude: 20.6667,
     longitude: 81.4833,
-    heroImage: "https://images.unsplash.com/photo-1476514525535-07fb3b4e0f11?auto=format&fit=crop&w=1200&q=80",
+    heroImage: "/gangrel.png",
     story: "Built across the Mahanadi River, the Gangrel (Ravishankar Sagar) Dam is the largest reservoir in Chhattisgarh. It is the birthplace of the Mahanadi water story — this colossal water body feeds the plains of Odisha and sustains 40% of the state's agriculture. During the monsoon overflow discharge, the dam's spillway thunder can be heard from 5 km away, as 36 gates open simultaneously in a breathtaking water spectacle.",
     bestTime: "August to November (Monsoon overflow discharge is spectacular)",
     safety: "Do not cross safety barriers near the spillway. Strong undertow currents exist near the dam base. Children must be supervised near water edges at all times.",
@@ -698,12 +699,20 @@ async function main() {
   // 1. Clear existing records to ensure clean slate transitions
   await prisma.bookmark.deleteMany();
   await prisma.review.deleteMany();
-  await prisma.media.deleteMany();
+  await prisma.image.deleteMany();
+  await prisma.video.deleteMany();
+  await prisma.festival.deleteMany();
+  await prisma.localFood.deleteMany();
+  await prisma.culture.deleteMany();
   await prisma.translation.deleteMany();
   await prisma.place.deleteMany();
   await prisma.category.deleteMany();
   await prisma.creatorProfile.deleteMany();
   await prisma.user.deleteMany();
+  await prisma.district.deleteMany();
+  await prisma.adminSetting.deleteMany();
+  await prisma.mediaLibrary.deleteMany();
+  await prisma.syncEvent.deleteMany();
 
   console.log('Cleaned database tables successfully.');
 
@@ -731,13 +740,16 @@ async function main() {
   });
 
   // 3. Create Creator Profile
-  await prisma.creatorProfile.create({
+  const creatorProfile = await prisma.creatorProfile.create({
     data: {
       userId: creatorUser.id,
-      verified: true,
+      displayName: 'Aarav Mandavi',
+      username: 'aarav_bastar_explore',
       bio: 'Bastar-based explorer and folklore preservation volunteer.',
-      instagram: 'aarav_bastar_explore',
-      youtube: 'BastarWanderer',
+      profileImage: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
+      coverImage: 'https://images.unsplash.com/photo-1621217646197-0b1961ee4768?auto=format&fit=crop&w=1200&q=80',
+      isVerified: true,
+      status: 'ACTIVE',
     },
   });
 
@@ -772,6 +784,45 @@ async function main() {
   }
   console.log('Populated travel categories and their translations successfully.');
 
+  // 4b. Create Districts dynamically from SEED_DESTINATIONS
+  const uniqueDistricts = Array.from(new Set(SEED_DESTINATIONS.map(d => d.district)));
+  const districtCache: { [name: string]: string } = {};
+  for (const distName of uniqueDistricts) {
+    const createdDist = await prisma.district.create({
+      data: {
+        name: distName,
+        slug: distName.toLowerCase().trim().replace(/[\s_]+/g, '-').replace(/[^\w-]/g, ''),
+        description: `Scenic region of ${distName} in Chhattisgarh, home to unique cultural landmarks and natural ecosystems.`,
+        image: SEED_DESTINATIONS.find(d => d.district === distName)?.heroImage || null
+      }
+    });
+    districtCache[distName] = createdDist.id;
+  }
+  console.log(`Created ${uniqueDistricts.length} District profiles.`);
+
+  // Seed sample Culture, Festivals, and Local Food for Bastar & Raipur
+  const bastarId = districtCache['Bastar'];
+  if (bastarId) {
+    await prisma.festival.createMany({
+      data: [
+        { districtId: bastarId, name: 'Bastar Dussehra', description: 'The longest festival in the world spanning 75 days, celebrating Goddess Danteshwari.' },
+        { districtId: bastarId, name: 'Goncha Festival', description: 'Tribal chariot festival associated with Lord Jagannath rituals.' }
+      ]
+    });
+    await prisma.localFood.createMany({
+      data: [
+        { districtId: bastarId, name: 'Chapotda (Red Ant Chutney)', description: 'Sharp, tangy tribal chutney prepared from red ants and their eggs.' },
+        { districtId: bastarId, name: 'Salphi / Sulfi', description: 'Natural alcoholic sap tapped from the Sulfi palm tree, known as tribal beer.' }
+      ]
+    });
+    await prisma.culture.createMany({
+      data: [
+        { districtId: bastarId, type: 'dance', title: 'Bison Horn Maria Dance', description: 'Traditional dance performed wearing headgear decorated with wild bison horns.' },
+        { districtId: bastarId, type: 'folklore', title: 'Legend of Lingo Pen', description: 'Tribal creator deity who established the social structure of the Gond people.' }
+      ]
+    });
+  }
+
   // 5. Populate Landmark Destinations
   for (const destination of SEED_DESTINATIONS) {
     const categoryId = categoryCache[destination.categorySlug];
@@ -780,22 +831,26 @@ async function main() {
       continue;
     }
 
+    const districtId = districtCache[destination.district];
+    if (!districtId) {
+      console.warn(`District mapping failed for district: ${destination.district}`);
+      continue;
+    }
+
     const createdPlace = await prisma.place.create({
       data: {
         slug: destination.slug,
         name: destination.name,
-        description: destination.tagline,
-        district: destination.district,
+        shortDescription: destination.tagline,
+        fullDescription: destination.story,
+        districtId: districtId,
         categoryId: categoryId,
         latitude: destination.latitude,
         longitude: destination.longitude,
         heroImage: destination.heroImage,
+        featuredImage: destination.heroImage,
         bestSeason: destination.bestTime,
-        history: destination.story,
-        safetyInfo: destination.safety,
-        rules: destination.ecoGuidance,
-        audioUrl: (destination as any).audioUrl || null,
-        audioNarrator: (destination as any).audioNarrator || null,
+        panoramaUrls: (destination as any).panoramaUrls ? JSON.stringify((destination as any).panoramaUrls) : '[]',
         verified: true,
       }
     });
@@ -822,7 +877,7 @@ async function main() {
                   lang,
                   entityType: 'Place',
                   entityId: createdPlace.id,
-                  field,
+                  field: field === 'description' ? 'shortDescription' : field,
                   value: val
                 }
               });
@@ -832,14 +887,27 @@ async function main() {
       }
     }
 
-    // Seed initial media mapping
-    await prisma.media.create({
+    // Seed initial image mapping
+    await prisma.image.create({
       data: {
-        url: destination.heroImage,
-        type: 'IMAGE',
+        imageUrl: destination.heroImage,
+        caption: `Scenic view of ${destination.name}`,
+        isFeatured: true,
         placeId: createdPlace.id,
       }
     });
+
+    // Seed initial mock video if applicable
+    if (destination.slug === 'chitrakote-falls') {
+      await prisma.video.create({
+        data: {
+          title: 'Monsoon Grandeur of Chitrakote',
+          videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+          duration: 10,
+          placeId: createdPlace.id
+        }
+      });
+    }
 
     // Seed mock reviews for first few items
     if (destination.slug === 'chitrakote-falls') {
@@ -881,6 +949,181 @@ async function main() {
     });
   }
 
+  // ── Seed Media Library & Settings ──────────────────────────────────────────
+  console.log('Seeding media library...');
+  const chitrakotePlace = await prisma.place.findUnique({ where: { slug: 'chitrakote-falls' } });
+  const sirpurPlace = await prisma.place.findUnique({ where: { slug: 'sirpur-monuments' } });
+
+  if (chitrakotePlace) {
+    await prisma.mediaLibrary.createMany({
+      data: [
+        {
+          placeId: chitrakotePlace.id,
+          districtId: chitrakotePlace.districtId,
+          mediaType: 'image',
+          title: 'Chitrakote Falls Monsoon View',
+          filePath: '/places/bastar/chitrakote/monsoon.png',
+          caption: 'Roaring falls during the peak monsoon season.',
+          photographer: 'Aarav Mandavi',
+          copyrightOwner: 'CG Tourism Board',
+          status: 'APPROVED',
+        },
+        {
+          placeId: chitrakotePlace.id,
+          districtId: chitrakotePlace.districtId,
+          mediaType: 'video',
+          title: 'Chitrakote Drone Panorama',
+          filePath: '/places/bastar/chitrakote/drone.mp4',
+          caption: 'High-definition aerial video of the entire horse-shoe gorge.',
+          photographer: 'Bastar Explorer',
+          copyrightOwner: 'Tourism Department',
+          status: 'APPROVED',
+        },
+        {
+          placeId: chitrakotePlace.id,
+          districtId: chitrakotePlace.districtId,
+          mediaType: 'image',
+          title: 'Chitrakote Falls Sunset View',
+          filePath: '/places/bastar/chitrakote/sunset.png',
+          caption: 'Vibrant sunset lighting behind the mist.',
+          photographer: 'CG Tourism Official',
+          copyrightOwner: 'CG Tourism',
+          status: 'APPROVED',
+        }
+      ]
+    });
+  }
+
+  if (sirpurPlace) {
+    await prisma.mediaLibrary.createMany({
+      data: [
+        {
+          placeId: sirpurPlace.id,
+          districtId: sirpurPlace.districtId,
+          mediaType: 'image',
+          title: 'Laxman Temple Brick Carving Details',
+          filePath: '/places/raipur/sirpur/details.png',
+          caption: 'Exquisite brick detailing of the 6th century shrine.',
+          photographer: 'Ancient Historian',
+          copyrightOwner: 'Archeological Survey of India',
+          status: 'APPROVED',
+        }
+      ]
+    });
+  }
+
+  // Seed default admin configurations
+  await prisma.adminSetting.createMany({
+    data: [
+      { key: 'auto_media_suggestions', value: 'true', description: 'Enable auto media suggestions for stories composer.' },
+      { key: 'ai_draft_story_enabled', value: 'true', description: 'Enable automatic generative AI draft stories.' },
+      { key: 'max_images_per_story', value: '15', description: 'Maximum allowed gallery images in a creator story.' },
+    ]
+  });
+
+  // ── Seed Creator Stories ──────────────────────────────────────────────────
+  console.log('Seeding creator stories...');
+  const bhoramdeoPlace = await prisma.place.findUnique({ where: { slug: 'bhoramdeo-temple' } });
+
+  const story1 = await prisma.creatorStory.create({
+    data: {
+      creatorId: creatorProfile.id,
+      placeId: chitrakotePlace?.id || null,
+      districtId: chitrakotePlace?.districtId || null,
+      categoryId: chitrakotePlace?.categoryId || null,
+      title: 'Chitrakote Falls at Sunrise - The Niagara of India 🌊',
+      slug: 'chitrakote-falls-sunrise',
+      description: 'Woke up at 5:00 AM to capture the glorious mist rising from the Indravati river gorge. Bastar in the monsoon is pure magic!',
+      storyType: 'video',
+      language: 'Hindi',
+      coverImage: '/chitrakote.png',
+      videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+      status: 'PUBLISHED',
+      visibility: 'PUBLIC',
+      likes: 142,
+      views: 1205,
+      shares: 32,
+    }
+  });
+
+  await prisma.storyMedia.create({
+    data: {
+      storyId: story1.id,
+      mediaType: 'video',
+      filePath: 'https://www.w3schools.com/html/mov_bbb.mp4',
+      thumbnail: '/chitrakote.png',
+      displayOrder: 0
+    }
+  });
+
+  await prisma.storyLocation.create({
+    data: {
+      storyId: story1.id,
+      latitude: 19.2006,
+      longitude: 81.6961,
+      nearestPlace: 'Chitrakote Falls'
+    }
+  });
+
+  await prisma.storyStatistics.create({
+    data: {
+      storyId: story1.id,
+      views: 1205,
+      likes: 142,
+      shares: 32
+    }
+  });
+
+  const story2 = await prisma.creatorStory.create({
+    data: {
+      creatorId: creatorProfile.id,
+      placeId: sirpurPlace?.id || null,
+      districtId: sirpurPlace?.districtId || null,
+      categoryId: sirpurPlace?.categoryId || null,
+      title: 'Exploring Laxman Temple in Sirpur 🛕',
+      slug: 'exploring-laxman-temple-sirpur',
+      description: 'Captured the intricate carvings and ancient red brickwork built by Queen Vasata in the 6th century. A must visit heritage complex!',
+      storyType: 'image',
+      language: 'English',
+      coverImage: '/sirpur.png',
+      videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+      status: 'PUBLISHED',
+      visibility: 'PUBLIC',
+      likes: 95,
+      views: 840,
+      shares: 18,
+    }
+  });
+
+  await prisma.storyMedia.create({
+    data: {
+      storyId: story2.id,
+      mediaType: 'image',
+      filePath: '/sirpur.png',
+      thumbnail: '/sirpur.png',
+      displayOrder: 0
+    }
+  });
+
+  await prisma.storyLocation.create({
+    data: {
+      storyId: story2.id,
+      latitude: 21.3414,
+      longitude: 82.1764,
+      nearestPlace: 'Sirpur'
+    }
+  });
+
+  await prisma.storyStatistics.create({
+    data: {
+      storyId: story2.id,
+      views: 840,
+      likes: 95,
+      shares: 18
+    }
+  });
+
+  console.log('Seeded creator stories successfully.');
   console.log(`Seeded ${EMERGENCY_STATIONS.length} emergency stations.`);
   console.log('Seeded all 15 landmark destinations and translations successfully.');
   console.log('Database seeding successfully finished!');

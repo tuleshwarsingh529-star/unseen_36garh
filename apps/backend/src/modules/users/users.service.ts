@@ -75,10 +75,10 @@ export class UsersService {
         role: 'CREATOR',
         creatorProfile: {
           create: {
-            verified: false, // Held in queue for administrative checks
+            isVerified: false, // Held in queue for administrative checks
             bio: dto.bio,
-            instagram: dto.instagram,
-            youtube: dto.youtube,
+            displayName: user.fullName,
+            username: dto.instagram || dto.youtube || user.email.split('@')[0],
           },
         },
       },

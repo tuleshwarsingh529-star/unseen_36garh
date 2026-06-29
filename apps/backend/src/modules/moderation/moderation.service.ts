@@ -32,7 +32,7 @@ export class ModerationService {
 
   async getPendingCreators() {
     return this.prisma.creatorProfile.findMany({
-      where: { verified: false },
+      where: { isVerified: false },
       include: {
         user: { select: { fullName: true, email: true } },
       },
@@ -46,7 +46,7 @@ export class ModerationService {
 
     const updated = await this.prisma.creatorProfile.update({
       where: { id },
-      data: { verified: true },
+      data: { isVerified: true },
     });
 
     // Also update the user's role to CREATOR if they are currently just USER
@@ -62,9 +62,13 @@ export class ModerationService {
 
   async getPendingPlaces() {
     return this.prisma.place.findMany({
-      where: { verified: false },
+      where: { 
+        verified: false,
+        status: { in: ['SUBMITTED', 'UNDER_REVIEW'] }
+      },
       include: {
         category: true,
+        district: true,
       },
       orderBy: {
         createdAt: 'desc',
@@ -83,7 +87,7 @@ export class ModerationService {
 
     const approvedPlace = await this.prisma.place.update({
       where: { id },
-      data: { verified: true },
+      data: { verified: true, status: 'PUBLISHED' },
     });
 
     return {
@@ -102,13 +106,15 @@ export class ModerationService {
       throw new NotFoundException(`Destination with ID ${id} does not exist inside pending queues.`);
     }
 
-    await this.prisma.place.delete({
+    const rejectedPlace = await this.prisma.place.update({
       where: { id },
+      data: { status: 'REJECTED', verified: false },
     });
 
     return {
       success: true,
-      message: `Destination submission rejected and deleted from backlog successfully.`,
+      message: `Destination submission rejected successfully.`,
+      placeId: rejectedPlace.id,
     };
   }
 
