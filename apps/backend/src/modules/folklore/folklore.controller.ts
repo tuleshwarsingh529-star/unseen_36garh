@@ -13,7 +13,7 @@ export class FolkloreController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Submit a new folklore story for verification' })
   async createFolklore(@Body() data: any, @Request() req: any) {
-    return this.folkloreService.createFolklore(data, req.user.userId);
+    return this.folkloreService.createFolklore(data, req.user.id);
   }
 
   @Get()

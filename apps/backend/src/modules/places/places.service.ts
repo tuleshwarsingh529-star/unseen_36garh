@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { CreatePlaceDto } from './dto/create-place.dto';
+import { SocketGateway } from '../socket/socket.gateway';
 
 @Injectable()
 export class PlacesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly socketGateway: SocketGateway,
+  ) {}
 
   async create(dto: CreatePlaceDto, user?: { id: string; role: string }) {
     const slug = dto.name
@@ -35,7 +39,7 @@ export class PlacesService {
       }
     }
 
-    return this.prisma.place.create({
+    const place = await this.prisma.place.create({
       data: {
         name: dto.name,
         slug,
@@ -93,7 +97,18 @@ export class PlacesService {
           }
         } : {})
       },
+      include: {
+        district: true,
+        category: true,
+        images: true,
+        videos: true,
+      }
     });
+
+    // Broadcast the newly created place via WebSockets
+    this.socketGateway.broadcast('place.created', place);
+
+    return place;
   }
 
   async update(id: string, dto: CreatePlaceDto, user: { id: string; role: string }) {

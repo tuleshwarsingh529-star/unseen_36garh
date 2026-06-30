@@ -23,18 +23,18 @@ export class BookingsController {
   @Post()
   @ApiOperation({ summary: 'Create a new booking' })
   createBooking(@Request() req, @Body() createBookingDto: CreateBookingDto) {
-    return this.bookingsService.createBooking(req.user.userId, createBookingDto);
+    return this.bookingsService.createBooking(req.user.id, createBookingDto);
   }
 
   @Get('my')
   @ApiOperation({ summary: 'Get all bookings for the authenticated user' })
   getMyBookings(@Request() req) {
-    return this.bookingsService.getMyBookings(req.user.userId);
+    return this.bookingsService.getMyBookings(req.user.id);
   }
 
   @Patch(':id/cancel')
   @ApiOperation({ summary: 'Cancel an existing booking' })
   cancelBooking(@Request() req, @Param('id') bookingId: string) {
-    return this.bookingsService.cancelBooking(req.user.userId, bookingId);
+    return this.bookingsService.cancelBooking(req.user.id, bookingId);
   }
 }

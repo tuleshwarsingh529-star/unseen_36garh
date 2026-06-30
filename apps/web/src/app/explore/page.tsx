@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { DESTINATIONS, type Destination } from "../data/destinations";
 import type { MapLayer } from "../../components/ChhattisgardhMap";
+import { io } from "socket.io-client";
 
 // ── Lazy-load the Leaflet map component (SSR: false) ──────────────────────
 const ChhattisgardhMap = dynamic(
@@ -115,42 +116,44 @@ export default function ExplorePage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [creatorSpots, setCreatorSpots] = useState<{ name: string; lat: number; lng: number }[]>([]);
 
-  // Load destinations from API
+  // Load destinations from API & bind real-time WebSocket updates
   useEffect(() => {
+    const mapPlaceToDestination = (d: any) => ({
+      id: d.id,
+      name: d.name,
+      category: d.category?.slug || "waterfalls",
+      district: d.district?.name || "Bastar",
+      tagline: d.shortDescription || d.description || "",
+      coordinates: { 
+        lat: d.latitude, 
+        lng: d.longitude, 
+        mapX: d.slug === 'chitrakote-falls' ? 42 : d.slug === 'sirpur-monuments' ? 62 : d.slug === 'bhoramdeo-temple' ? 30 : 50, 
+        mapY: d.slug === 'chitrakote-falls' ? 78 : d.slug === 'sirpur-monuments' ? 42 : d.slug === 'bhoramdeo-temple' ? 30 : 50
+      },
+      heroImage: d.heroImage || d.featuredImage || "/chitrakote.png",
+      storyTitle: d.name,
+      story: d.fullDescription || d.description || "",
+      timings: d.openingTime && d.closingTime ? `${d.openingTime} - ${d.closingTime}` : "08:00 AM - 06:00 PM",
+      routes: d.address || "",
+      bestTime: d.bestSeason || "",
+      seasonalAdvice: "",
+      safety: "",
+      nearby: [],
+      localInsights: "",
+      ecoGuidance: "",
+      biodiversityScore: 85,
+      crowdCapacity: d.distanceFromCity ? d.distanceFromCity * 10 : 500,
+      rating: 4.8,
+      localFood: "",
+      photographySpots: ""
+    });
+
     const loadDestinations = async () => {
       try {
         const res = await fetch("http://localhost:4000/api/v1/places");
         if (res.ok) {
           const data = await res.json();
-          const mapped = data.map((d: any) => ({
-            id: d.id,
-            name: d.name,
-            category: d.category.slug,
-            district: d.district?.name || "Bastar",
-            tagline: d.shortDescription || d.description || "",
-            coordinates: { 
-              lat: d.latitude, 
-              lng: d.longitude, 
-              mapX: d.slug === 'chitrakote-falls' ? 42 : d.slug === 'sirpur-monuments' ? 62 : d.slug === 'bhoramdeo-temple' ? 30 : 50, 
-              mapY: d.slug === 'chitrakote-falls' ? 78 : d.slug === 'sirpur-monuments' ? 42 : d.slug === 'bhoramdeo-temple' ? 30 : 50
-            },
-            heroImage: d.heroImage || d.featuredImage || "/chitrakote.png",
-            storyTitle: d.name,
-            story: d.fullDescription || d.description || "",
-            timings: d.openingTime && d.closingTime ? `${d.openingTime} - ${d.closingTime}` : "08:00 AM - 06:00 PM",
-            routes: d.address || "",
-            bestTime: d.bestSeason || "",
-            seasonalAdvice: "",
-            safety: "",
-            nearby: [],
-            localInsights: "",
-            ecoGuidance: "",
-            biodiversityScore: 85,
-            crowdCapacity: d.distanceFromCity ? d.distanceFromCity * 10 : 500,
-            rating: 4.8,
-            localFood: "",
-            photographySpots: ""
-          }));
+          const mapped = data.map((d: any) => mapPlaceToDestination(d));
           if (mapped.length > 0) {
             setDestinations(mapped);
           }
@@ -159,7 +162,27 @@ export default function ExplorePage() {
         console.warn("Could not fetch remote destinations, utilizing fallback database index.", err);
       }
     };
+
     loadDestinations();
+
+    // Setup WebSockets
+    const socket = io("http://localhost:4000");
+
+    socket.on("connect", () => {
+      console.log("WebSocket connected to Explore Page.");
+    });
+
+    socket.on("place.created", (newPlace: any) => {
+      const mapped = mapPlaceToDestination(newPlace);
+      setDestinations((prev) => {
+        const filtered = prev.filter(d => d.id !== mapped.id);
+        return [mapped, ...filtered];
+      });
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, []);
 
   // Load verified creator spots from local storage
