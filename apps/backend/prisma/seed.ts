@@ -255,7 +255,7 @@ const SEED_DESTINATIONS = [
     tagline: "The Gravity-Defying Stream",
     latitude: 22.8150,
     longitude: 83.2800,
-    heroImage: "https://images.unsplash.com/photo-1542224566-6e85f2e6772f?auto=format&fit=crop&w=1200&q=80",
+    heroImage: "/ulta_pani.jpg",
     story: "Ulta Pani is a unique and mind-boggling location in Mainpat where water appears to flow uphill. This optical illusion is similar to 'magnetic hills' found elsewhere in the world. Visitors often test the phenomenon by placing a water bottle or turning off their vehicle's engine to watch it roll uphill against gravity.",
     bestTime: "All year round",
     safety: "Safe for all ages. Keep an eye out for vehicles testing the uphill roll on the road.",
