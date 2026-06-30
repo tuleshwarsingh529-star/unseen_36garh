@@ -230,15 +230,45 @@ export default function NewPlacePage() {
 
   // ── File upload helper ────────────────────────────────────────────────────
   const handleFileUpload = async (file: File, folder: string = "places"): Promise<string | null> => {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("folder", folder);
-    try {
-      const res = await fetch(`${API}/storage/upload`, {
+    let currentToken = useAuthStore.getState().token;
+
+    // If token is missing, try to refresh first
+    if (!currentToken) {
+      const refreshed = await useAuthStore.getState().refreshAccessToken();
+      if (refreshed) {
+        currentToken = useAuthStore.getState().token;
+      }
+    }
+
+    const performUpload = async (authToken: string | null) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", folder);
+
+      const headers: HeadersInit = {};
+      if (authToken) {
+        headers["Authorization"] = `Bearer ${authToken}`;
+      }
+
+      return fetch(`${API}/storage/upload`, {
         method: "POST",
-        headers: { "Authorization": `Bearer ${token}` },
+        headers,
         body: formData,
       });
+    };
+
+    try {
+      let res = await performUpload(currentToken);
+
+      // If unauthorized (e.g. token expired), try to refresh token and retry once
+      if (res.status === 401) {
+        const refreshed = await useAuthStore.getState().refreshAccessToken();
+        if (refreshed) {
+          const newToken = useAuthStore.getState().token;
+          res = await performUpload(newToken);
+        }
+      }
+
       const data = await res.json();
       if (res.ok && data.success) return data.url;
       console.error("Upload failed", data.message);
