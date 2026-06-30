@@ -437,7 +437,7 @@ const SEED_DESTINATIONS = [
     tagline: "The Scenic Viewpoint of Kabirdham",
     latitude: 22.1200,
     longitude: 81.0800,
-    heroImage: "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?auto=format&fit=crop&w=1200&q=80",
+    heroImage: "/saroda_dadar.jpg",
     story: "Saroda Dadar is a stunning hilltop viewpoint that offers sweeping, panoramic vistas of the surrounding Maikal Hills and dense forests. Known for its cool weather, it is a highly popular picnic destination. Visitors flock here to witness spectacular sunrise and sunset views that paint the sky in brilliant hues.",
     bestTime: "October to March",
     safety: "Stay away from the steep edges of the viewpoint, especially with children.",
