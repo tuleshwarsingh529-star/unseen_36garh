@@ -241,7 +241,7 @@ const SEED_DESTINATIONS = [
     tagline: "The Majestic Fall of Mainpat",
     latitude: 22.8223,
     longitude: 83.2842,
-    heroImage: "https://images.unsplash.com/photo-1432405972618-c60002a157c5?auto=format&fit=crop&w=1200&q=80",
+    heroImage: "/tiger_point.jpg",
     story: "Tiger Point is the most famous waterfall in Mainpat, plunging from a height of approximately 50-60 meters. According to locals, tigers used to visit this spot to drink water, which gave it its name. The surrounding dense forests and the roar of the cascading water make it an ideal spot for photography and picnics.",
     bestTime: "July to September (Monsoon) and October to February",
     safety: "Do not venture close to the edge of the falls. The rocks can be extremely slippery.",
