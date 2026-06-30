@@ -27,8 +27,8 @@ export class PlacesService {
     
     if (user) {
       if (user.role === 'CREATOR') {
-        initialStatus = dto.status === 'DRAFT' ? 'DRAFT' : 'SUBMITTED';
-        verified = false;
+        initialStatus = dto.status === 'DRAFT' ? 'DRAFT' : 'PUBLISHED';
+        verified = dto.status === 'DRAFT' ? false : true;
       } else if (dto.status) {
         initialStatus = dto.status;
         verified = dto.status === 'PUBLISHED';
