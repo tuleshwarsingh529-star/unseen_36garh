@@ -423,7 +423,7 @@ const SEED_DESTINATIONS = [
     tagline: "A Peaceful Jain Pilgrimage Site",
     latitude: 22.0500,
     longitude: 81.2500,
-    heroImage: "https://images.unsplash.com/photo-1548625361-f6dbca5c71b3?auto=format&fit=crop&w=1200&q=80",
+    heroImage: "/jain_tirth_bakela.jpg",
     story: "Bakela is an important pilgrimage destination for the Jain community, located in the Kabirdham district. The site features beautiful, intricately carved Jain temples set in a deeply peaceful and meditative environment. It attracts devotees from across the state who come to seek spiritual solace and admire the immaculate white marble architecture.",
     bestTime: "All year round",
     safety: "Respect the religious customs; appropriate attire is required.",
