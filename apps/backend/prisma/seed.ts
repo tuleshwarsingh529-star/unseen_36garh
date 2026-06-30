@@ -339,7 +339,7 @@ const SEED_DESTINATIONS = [
     tagline: "A Canvas of Golden Hues",
     latitude: 22.7900,
     longitude: 83.2500,
-    heroImage: "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?auto=format&fit=crop&w=1200&q=80",
+    heroImage: "/parpatiya_sunset.jpg",
     story: "Parpatiya is renowned as one of the best places in Chhattisgarh to enjoy panoramic sunset views. From this vantage point, you can see a seemingly endless expanse of valleys, forests, and distant mountain ranges. As the sun dips below the horizon, the entire landscape is bathed in a warm, golden glow, making it highly popular among nature lovers and photographers.",
     bestTime: "September to March",
     safety: "Stay behind any barriers and watch your step as it gets dark quickly after sunset.",
