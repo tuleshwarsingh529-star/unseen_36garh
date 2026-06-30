@@ -325,7 +325,7 @@ const SEED_DESTINATIONS = [
     tagline: "Mainpat's Best Kept Secret",
     latitude: 22.8400,
     longitude: 83.3100,
-    heroImage: "https://images.unsplash.com/photo-1506159904225-f0529ce1fb29?auto=format&fit=crop&w=1200&q=80",
+    heroImage: "/ghaghi_waterfall.jpg",
     story: "Ghaghi Waterfall is a beautiful, lesser-known cascade hidden deep within the dense forests of Mainpat. Because it is less commercialized than Tiger Point, it offers a tranquil escape for nature lovers. The waterfall is most breathtaking during or just after the monsoon when the water flow is robust and the surrounding foliage is vibrantly green.",
     bestTime: "August to November",
     safety: "Travel in a group as the area is quite secluded. Wear sturdy hiking shoes.",
