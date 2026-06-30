@@ -367,7 +367,7 @@ const SEED_DESTINATIONS = [
     tagline: "A Serene Retreat for History Lovers",
     latitude: 22.0950,
     longitude: 81.1650,
-    heroImage: "https://images.unsplash.com/photo-1514222134-b57cbb8ce073?auto=format&fit=crop&w=1200&q=80",
+    heroImage: "/chherki_mahal.jpg",
     story: "Chherki Mahal is another fascinating archaeological monument forming the Bhoramdeo temple trio. Constructed by the Nagvanshi kings during the 14th century, it is dedicated to Lord Shiva but holds a unique charm with its unpretentious, slightly unfinished architectural style. Set amidst tranquil surroundings, it smells faintly of goat ('chheri' in local dialect), which gives it its peculiar name. It is less crowded and offers a deeply peaceful environment for history enthusiasts.",
     bestTime: "October to March",
     safety: "The site is safe but somewhat secluded; best visited during daylight hours.",
