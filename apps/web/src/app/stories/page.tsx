@@ -82,7 +82,33 @@ export default function StoriesPage() {
 
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1";
 
-  // Folklore fetch removed to eliminate frontend-backend latency. Using static mockStories exclusively.
+  const loadFolkloreStories = async () => {
+    try {
+      const res = await fetch(`${API}/folklore`);
+      if (res.ok) {
+        const data = await res.json();
+        const mapped: StoryCard[] = data.map((item: any) => ({
+          id: item.id,
+          destinationName: item.monument,
+          title: item.title,
+          category: "Community Contribution",
+          folklore: item.description,
+          origin: `${item.location} Local Story`,
+          narrator: item.author?.fullName || "Verified Citizen",
+          narratorRole: item.author?.role === "CREATOR" ? "Verified Contributor" : "Citizen Contributor",
+          audioLength: "3 min 10 sec",
+          biodiversityFocus: "Preservation of local heritage & oral history",
+        }));
+        setStories([...mockStories, ...mapped]);
+      }
+    } catch (e) {
+      console.error("Failed to load folklore from API", e);
+    }
+  };
+
+  useEffect(() => {
+    loadFolkloreStories();
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -143,12 +169,13 @@ export default function StoriesPage() {
         body: JSON.stringify(formData)
       });
       if (res.ok) {
-        setSubmitMsg("Submitted successfully! Awaiting moderator verification.");
+        setSubmitMsg("Submitted successfully! Content is now live on the platform.");
         setFormData({ title: "", monument: "", location: "", description: "" });
+        loadFolkloreStories();
         setTimeout(() => {
           setShowSubmitModal(false);
           setSubmitMsg("");
-        }, 3000);
+        }, 2000);
       } else {
         const err = await res.json();
         setSubmitMsg(err.message || "Submission failed.");

@@ -18,7 +18,7 @@ export class FolkloreService {
         images,
         videos,
         authorId: userId,
-        verified: false,
+        verified: true,
       },
     });
 
