@@ -269,7 +269,7 @@ const SEED_DESTINATIONS = [
     tagline: "The Bouncing Earth of Mainpat",
     latitude: 22.8250,
     longitude: 83.2900,
-    heroImage: "https://images.unsplash.com/photo-1518182170546-076616fd46fb?auto=format&fit=crop&w=1200&q=80",
+    heroImage: "/jaljali.jpg",
     story: "Jaljali is a fascinating natural wonder where the earth literally bounces under your feet. The ground here has a spongy, trampoline-like texture due to a unique geological phenomenon involving trapped subterranean water and specialized soil structure. Visitors love to jump together to feel the seismic ripples travel through the earth.",
     bestTime: "October to March",
     safety: "Safe to jump, but avoid areas that look too wet or marshy.",
