@@ -83,8 +83,10 @@ export default function PlannerPage() {
     if (transport === "bike") pace = "slow";
     if (transport === "transit") pace = "active";
 
+    const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1";
+
     try {
-      const response = await fetch("http://localhost:4000/api/v1/itinerary/generate", {
+      const response = await fetch(`${API}/itinerary/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ district, durationDays: tripDays, pace })

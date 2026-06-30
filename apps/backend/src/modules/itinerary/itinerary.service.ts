@@ -34,30 +34,36 @@ export class ItineraryService {
 
     if (isMock) {
       console.warn("GEMINI_API_KEY not configured. Falling back to mock itinerary logic.");
-      return [
-        {
-          day: 1,
-          distanceTraveledKm: pace === 'slow' ? 30 : 60,
-          stops: places.slice(0, 2).map(p => ({
+      const days = [];
+      for (let i = 1; i <= durationDays; i++) {
+        // Distribute places across days dynamically
+        const startIdx = ((i - 1) * 2) % places.length;
+        const endIdx = (startIdx + 2) % places.length;
+        
+        let stops = [];
+        if (startIdx < endIdx) {
+          stops = places.slice(startIdx, endIdx);
+        } else {
+          stops = [...places.slice(startIdx), ...places.slice(0, endIdx)];
+        }
+        
+        if (stops.length === 0 && places.length > 0) {
+          stops = [places[0]];
+        }
+
+        days.push({
+          day: i,
+          distanceTraveledKm: pace === 'slow' ? 25 + i * 5 : pace === 'active' ? 70 + i * 10 : 45 + i * 8,
+          stops: stops.map(p => ({
             name: p.name,
             slug: p.slug,
             coordinates: { lat: p.latitude, lng: p.longitude },
             bestSeasonInfo: p.bestSeason || '',
-            safetyRules: ''
+            safetyRules: p.rules || 'Respect the local tribal community protocols.'
           }))
-        },
-        ...(durationDays > 1 ? [{
-          day: 2,
-          distanceTraveledKm: pace === 'active' ? 120 : 45,
-          stops: places.slice(2, 4).map(p => ({
-            name: p.name,
-            slug: p.slug,
-            coordinates: { lat: p.latitude, lng: p.longitude },
-            bestSeasonInfo: p.bestSeason || '',
-            safetyRules: ''
-          }))
-        }] : [])
-      ];
+        });
+      }
+      return days;
     }
 
     // Prepare context for the AI
