@@ -147,11 +147,19 @@ export default function DestinationDetailPage({ params }: PageProps) {
           });
         } else {
           const staticDest = getDestinationById(resolvedParams.id);
-          setDestination({ ...staticDest, panoramaUrls: [] });
+          if (staticDest) {
+            setDestination({ ...staticDest, panoramaUrls: [] });
+          } else {
+            setDestination(null);
+          }
         }
       } catch (err) {
         const staticDest = getDestinationById(resolvedParams.id);
-        setDestination({ ...staticDest, panoramaUrls: [] });
+        if (staticDest) {
+          setDestination({ ...staticDest, panoramaUrls: [] });
+        } else {
+          setDestination(null);
+        }
       } finally {
         setLoading(false);
       }
@@ -276,7 +284,7 @@ export default function DestinationDetailPage({ params }: PageProps) {
           <div className="flex flex-wrap gap-4 mt-2">
             <div className="flex items-center gap-2 text-xs font-mono bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg">
               <MapPin className="w-4 h-4 text-warm-orange" />
-              <span>Lat: {destination.coordinates.lat.toFixed(4)}° N</span>
+              <span>Lat: {destination.coordinates?.lat?.toFixed(4) || "0.0000"}° N</span>
             </div>
             <div className="flex items-center gap-2 text-xs font-mono bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg">
               <Clock className="w-4 h-4 text-green-400" />

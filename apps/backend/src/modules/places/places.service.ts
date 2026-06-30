@@ -209,8 +209,9 @@ export class PlacesService {
   }
 
   async findBySlug(slug: string) {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
     const place = await this.prisma.place.findUnique({
-      where: { slug },
+      where: isUuid ? { id: slug } : { slug },
       include: {
         category: true,
         district: true,
@@ -228,7 +229,7 @@ export class PlacesService {
     });
 
     if (!place) {
-      throw new NotFoundException(`Destination with slug '${slug}' not found.`);
+      throw new NotFoundException(`Destination with slug or ID '${slug}' not found.`);
     }
 
     return place;
