@@ -1008,8 +1008,46 @@ async function main() {
   }
   console.log('Populated travel categories and their translations successfully.');
 
-  // 4b. Create Districts dynamically from SEED_DESTINATIONS
-  const uniqueDistricts = Array.from(new Set(SEED_DESTINATIONS.map(d => d.district)));
+  // 4b. Create Districts dynamically from complete Chhattisgarh list and SEED_DESTINATIONS
+  const CHHATTISGARH_DISTRICTS = [
+    "Balod",
+    "Baloda Bazar",
+    "Balrampur",
+    "Bastar",
+    "Bemetara",
+    "Bijapur",
+    "Bilaspur",
+    "Dantewada",
+    "Dhamtari",
+    "Durg",
+    "Gariaband",
+    "Gaurela-Pendra-Marwahi",
+    "Janjgir-Champa",
+    "Jashpur",
+    "Kawardha",
+    "Kanker",
+    "Kondagaon",
+    "Korba",
+    "Koriya",
+    "Mahasamund",
+    "Manendragarh-Chirmiri-Bharatpur",
+    "Mohla-Manpur-Ambagarh Chowki",
+    "Mungeli",
+    "Narayanpur",
+    "Raigarh",
+    "Raipur",
+    "Rajnandgaon",
+    "Sakti",
+    "Sarangarh-Bilaigarh",
+    "Sukma",
+    "Surajpur",
+    "Surguja",
+    "Khairagarh-Chhuikhadan-Gandai"
+  ];
+  const uniqueDistricts = Array.from(new Set([
+    ...CHHATTISGARH_DISTRICTS,
+    ...SEED_DESTINATIONS.map(d => d.district)
+  ]));
   const districtCache: { [name: string]: string } = {};
   for (const distName of uniqueDistricts) {
     const createdDist = await prisma.district.create({

@@ -67,8 +67,42 @@ const LAYERS: { id: MapLayer; label: string; desc: string; icon: React.ElementTy
   },
 ];
 
-// ── Sub-filters ────────────────────────────────────────────────────────────
-const DISTRICTS = ["All", "Bastar", "Raipur", "Bilaspur", "Kawardha", "Surguja", "Raigarh", "Durg"];
+const DISTRICTS = [
+  "All",
+  "Balod",
+  "Baloda Bazar",
+  "Balrampur",
+  "Bastar",
+  "Bemetara",
+  "Bijapur",
+  "Bilaspur",
+  "Dantewada",
+  "Dhamtari",
+  "Durg",
+  "Gariaband",
+  "Gaurela-Pendra-Marwahi",
+  "Janjgir-Champa",
+  "Jashpur",
+  "Kawardha",
+  "Kanker",
+  "Kondagaon",
+  "Korba",
+  "Koriya",
+  "Mahasamund",
+  "Manendragarh-Chirmiri-Bharatpur",
+  "Mohla-Manpur-Ambagarh Chowki",
+  "Mungeli",
+  "Narayanpur",
+  "Raigarh",
+  "Raipur",
+  "Rajnandgaon",
+  "Sakti",
+  "Sarangarh-Bilaigarh",
+  "Sukma",
+  "Surajpur",
+  "Surguja",
+  "Khairagarh-Chhuikhadan-Gandai"
+];
 const EXPERIENCES = ["Family-Friendly", "Eco-First", "Photography", "Offbeat"];
 
 export default function ExplorePage() {
