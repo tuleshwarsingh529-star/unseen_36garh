@@ -353,7 +353,7 @@ const SEED_DESTINATIONS = [
     tagline: "The Historical Monument of the Nagvanshis",
     latitude: 22.1000,
     longitude: 81.1600,
-    heroImage: "https://images.unsplash.com/photo-1548625361-f6dbca5c71b3?auto=format&fit=crop&w=1200&q=80",
+    heroImage: "/madwa_mahal.jpg",
     story: "Located just a kilometer away from the famous Bhoramdeo Temple, Madwa Mahal is an ancient archaeological site built in 1349 AD by the Nagvanshi ruler Ramachandra Deo. Originally constructed as a 'Mandap' (marriage hall) to commemorate the marriage between a Nagvanshi king and a Haihaya princess, the temple is dedicated to Lord Shiva. It features a stunning Shiva Linga and exquisite carvings reflecting the rich culture of that era.",
     bestTime: "October to March",
     safety: "Do not climb the ancient fragile structures.",
