@@ -297,7 +297,7 @@ const SEED_DESTINATIONS = [
     tagline: "A Hidden Cascade in the Dense Woods",
     latitude: 22.8300,
     longitude: 83.3000,
-    heroImage: "https://images.unsplash.com/photo-1546948630-1149ea60dc86?auto=format&fit=crop&w=1200&q=80",
+    heroImage: "/fish_point.jpg",
     story: "Fish Point gets its name from the Machhali Nadi (Fish River) that flows through this region. The river takes a steep plunge deep within the forested hills, creating a highly scenic and secluded waterfall. It is a highly popular picnic destination, offering a pristine natural environment away from the usual crowds.",
     bestTime: "August to January",
     safety: "Swimming is not advised due to underwater rocks and strong currents.",
