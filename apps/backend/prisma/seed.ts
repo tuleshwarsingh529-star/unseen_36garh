@@ -381,7 +381,7 @@ const SEED_DESTINATIONS = [
     tagline: "The Winding Hill Station of Maikal",
     latitude: 22.1800,
     longitude: 81.0500,
-    heroImage: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1200&q=80",
+    heroImage: "/chilphi_valley.jpg",
     story: "Chilphi Valley is a breathtakingly beautiful hill station-like destination nestled in the Maikal Hills range. The journey through the valley features steep, winding roads cutting through lush, dense forests. It is famous for its cool, misty weather, panoramic views, and is a favorite route for bikers and nature enthusiasts looking for adventure and serenity.",
     bestTime: "July to October (Monsoon) and November to February",
     safety: "Drive carefully as the mountain roads have sharp hairpin bends and can be foggy.",
