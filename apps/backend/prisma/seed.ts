@@ -283,7 +283,7 @@ const SEED_DESTINATIONS = [
     tagline: "A Slice of Tibet in Chhattisgarh",
     latitude: 22.8100,
     longitude: 83.2750,
-    heroImage: "https://images.unsplash.com/photo-1548625361-f6dbca5c71b3?auto=format&fit=crop&w=1200&q=80",
+    heroImage: "/buddha_temple.jpg",
     story: "Often referred to as the 'Mini Tibet' of Chhattisgarh, Mainpat is home to a significant Tibetan refugee community resettled here in the 1960s. The Buddha Temple (Dhakpo Shedupling Monastery) is the spiritual heart of this community. It features beautiful Tibetan architecture, colorful prayer flags fluttering in the cool breeze, and a peaceful ambiance.",
     bestTime: "All year round. Especially vibrant during Tibetan New Year (Losar).",
     safety: "Maintain silence and respect the monastic rules while inside the prayer halls.",
