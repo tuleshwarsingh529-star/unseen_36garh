@@ -451,7 +451,7 @@ const SEED_DESTINATIONS = [
     tagline: "A Historic Eco-Tourism Haven",
     latitude: 22.2000,
     longitude: 81.1800,
-    heroImage: "https://images.unsplash.com/photo-1542224566-6e85f2e6772f?auto=format&fit=crop&w=1200&q=80",
+    heroImage: "/pachrahi.jpg",
     story: "Pachrahi is a prominent archaeological site intertwined with a scenic natural environment. Excavations have revealed fascinating ancient artifacts, coins, and structural ruins dating back centuries, suggesting a significant historical settlement. Surrounded by peaceful forests, it is now an emerging eco-tourism destination perfect for day trips and history enthusiasts.",
     bestTime: "October to March",
     safety: "Do not touch or move any archaeological artifacts you might encounter.",
