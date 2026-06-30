@@ -311,7 +311,7 @@ const SEED_DESTINATIONS = [
     tagline: "The Grand Panorama of Mainpat",
     latitude: 22.8000,
     longitude: 83.2600,
-    heroImage: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1200&q=80",
+    heroImage: "/mehta_point.jpg",
     story: "Mehta Point offers a spectacular, unobstructed view of the deep valleys and vast green forests stretching across the Surguja district. It is widely considered the best location in Mainpat for watching the sunrise and sunset, as the sky turns into a canvas of vibrant colors over the rolling hills.",
     bestTime: "October to February for clear skies and misty mornings.",
     safety: "There are steep drop-offs; keep children away from the edges.",
