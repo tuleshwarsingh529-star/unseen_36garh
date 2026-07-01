@@ -174,5 +174,8 @@
     "wildlife": "Tiger & bison domains",
     "photography": "Unseen panoramic vistas",
     "eco": "Community homestays"
+  },
+  "planner": {
+    "day_title": "Day Route Highlights:"
   }
 }

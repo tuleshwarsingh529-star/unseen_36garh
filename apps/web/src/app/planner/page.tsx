@@ -214,11 +214,13 @@ export default function PlannerPage() {
                 <Map className="w-4.5 h-4.5" />
                 2. Target District
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
                 {[
-                  { id: "Bastar", title: "Bastar", desc: "Heart of tribal culture and waterfalls", icon: Trees },
-                  { id: "Surguja", title: "Surguja", desc: "Hill stations and ancient caves", icon: Compass },
-                  { id: "Raipur", title: "Raipur", desc: "Capital city and heritage temples", icon: CheckCircle }
+                  { id: "Bastar", title: "Bastar", desc: "Waterfalls & culture", icon: Trees },
+                  { id: "Mainpat", title: "Surguja (Mainpat)", desc: "Hill stations & caves", icon: Compass },
+                  { id: "Raipur", title: "Raipur", desc: "Capital city heritage", icon: CheckCircle },
+                  { id: "Bilaspur", title: "Bilaspur", desc: "Forts & heritage temples", icon: MapPin },
+                  { id: "Kawardha", title: "Kawardha", desc: "Palaces & history", icon: ShieldCheck }
                 ].map(item => {
                   const Icon = item.icon;
                   return (

@@ -59,7 +59,7 @@ export class ItineraryService {
             slug: p.slug,
             coordinates: { lat: p.latitude, lng: p.longitude },
             bestSeasonInfo: p.bestSeason || '',
-            safetyRules: p.rules || 'Respect the local tribal community protocols.'
+            safetyRules: p.travelTips || 'Respect the local tribal community protocols.'
           }))
         });
       }
@@ -72,7 +72,7 @@ export class ItineraryService {
       slug: p.slug,
       coordinates: { lat: p.latitude, lng: p.longitude },
       bestSeason: p.bestSeason || '',
-      safetyRules: '',
+      safetyRules: p.travelTips || '',
       description: p.shortDescription || p.fullDescription || ''
     }));
 
