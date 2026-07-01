@@ -34,6 +34,7 @@ export default function Home() {
   const [activeAccordion, setActiveAccordion] = useState<number | null>(0);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationStatus, setLocationStatus] = useState<string>("");
+  const [watchId, setWatchId] = useState<number | null>(null);
   
   interface NearbyPlace {
     id: string;
@@ -154,17 +155,27 @@ export default function Home() {
   };
 
   const handleEnableGeolocation = () => {
-    setLocationStatus(lang === "en" ? "Locating coordinate feed..." : lang === "cg" ? "तीर के रद्दा खोजत हंव..." : "स्थान खोजा जा रहा है...");
+    // Toggle tracking
+    if (watchId !== null) {
+      navigator.geolocation.clearWatch(watchId);
+      setWatchId(null);
+      setUserLocation(null);
+      setNearbyPlaces([]);
+      setLocationStatus(t("home.telemetry_deactivated_desc"));
+      return;
+    }
+
+    setLocationStatus(lang === "en" ? "Connecting to real-time GPS stream..." : lang === "cg" ? "तीर के रद्दा खोजत हंव..." : "स्थान खोजा जा रहा है...");
     if (!navigator.geolocation) {
       setLocationStatus(lang === "en" ? "Geolocation not supported." : lang === "cg" ? "स्थान खोज काम नई करत हे।" : "स्थान खोजना समर्थित नहीं है।");
       return;
     }
 
-    navigator.geolocation.getCurrentPosition(
+    const id = navigator.geolocation.watchPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
         setUserLocation({ lat: latitude, lng: longitude });
-        setLocationStatus(lang === "en" ? "Telemetry active" : lang === "cg" ? "लोकेशन मिलगे" : "टेलीमेट्री सक्रिय");
+        setLocationStatus(lang === "en" ? "Telemetry active (real-time tracking)" : lang === "cg" ? "लोकेशन मिलगे" : "टेलीमेट्री सक्रिय");
         
         // Calculate true geodesic distance using GPS location
         const calculated = DESTINATIONS.map((dest) => {
@@ -187,9 +198,24 @@ export default function Home() {
           return { ...dest, computedDistance: distKm };
         }).sort((a, b) => a.computedDistance - b.computedDistance);
         setNearbyPlaces(calculated.slice(0, 5));
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 10000
       }
     );
+
+    setWatchId(id);
   };
+
+  useEffect(() => {
+    return () => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+    };
+  }, [watchId]);
 
   return (
     <div className="w-full flex flex-col items-center bg-sand-beige/25">
@@ -361,10 +387,12 @@ export default function Home() {
               <button
                 id="geo-trigger-btn"
                 onClick={handleEnableGeolocation}
-                className="inline-flex items-center gap-2.5 px-6 py-3 rounded-xl bg-warm-orange hover:bg-orange-600 text-charcoal-stone font-bold transition-all transform active:scale-95 shadow-md cursor-pointer"
+                className={`inline-flex items-center gap-2.5 px-6 py-3 rounded-xl font-bold transition-all transform active:scale-95 shadow-md cursor-pointer ${
+                  watchId !== null ? "bg-red-500 hover:bg-red-600 text-white" : "bg-warm-orange hover:bg-orange-600 text-charcoal-stone"
+                }`}
               >
-                <MapPin className="w-5 h-5 text-charcoal-stone" />
-                {t("home.telemetry_btn")}
+                <MapPin className="w-5 h-5" />
+                {watchId !== null ? (lang === "en" ? "Stop Tracking" : lang === "cg" ? "ट्रैकिंग रोकव" : "ट्रैकिंग रोकें") : t("home.telemetry_btn")}
               </button>
               <span className="text-xs font-mono text-sand-beige/60 bg-white/10 px-3 py-2 rounded-lg border border-white/10">
                 {t("home.telemetry_status")} <strong className="text-white font-mukta">{locationStatus}</strong>

@@ -33,6 +33,7 @@ export default function NearbyPlacesPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [watchId, setWatchId] = useState<number | null>(null);
   
   // Filters
   const [selectedDistrict, setSelectedDistrict] = useState<string>("");
@@ -42,6 +43,15 @@ export default function NearbyPlacesPage() {
   const blocks = ["Central", "North", "South", "East", "West"]; // Mock blocks for UI
 
   const getUserLocation = () => {
+    // If tracking is already active, clear the watch to toggle/stop it
+    if (watchId !== null) {
+      navigator.geolocation.clearWatch(watchId);
+      setWatchId(null);
+      setLocation(null);
+      setPlaces([]);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     if (!navigator.geolocation) {
@@ -50,7 +60,7 @@ export default function NearbyPlacesPage() {
       return;
     }
 
-    navigator.geolocation.getCurrentPosition(
+    const id = navigator.geolocation.watchPosition(
       (position) => {
         setLocation({
           lat: position.coords.latitude,
@@ -58,12 +68,27 @@ export default function NearbyPlacesPage() {
         });
         setIsLoading(false);
       },
-      () => {
+      (err) => {
         setError("Unable to retrieve your location. Please ensure location services are enabled.");
         setIsLoading(false);
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 10000
       }
     );
+
+    setWatchId(id);
   };
+
+  useEffect(() => {
+    return () => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+    };
+  }, [watchId]);
 
   const fetchNearbyPlaces = async () => {
     if (!location) return;
@@ -149,10 +174,12 @@ export default function NearbyPlacesPage() {
 
         <button
           onClick={getUserLocation}
-          className="w-full lg:w-auto px-8 py-3.5 rounded-xl bg-forest-emerald hover:bg-tribal-terracotta text-white font-bold text-sm font-sans tracking-wide shadow-lg shadow-forest-emerald/20 transition-all duration-300 inline-flex justify-center items-center gap-2 shrink-0"
+          className={`w-full lg:w-auto px-8 py-3.5 rounded-xl text-white font-bold text-sm font-sans tracking-wide shadow-lg transition-all duration-300 inline-flex justify-center items-center gap-2 shrink-0 cursor-pointer ${
+            watchId !== null ? "bg-red-500 hover:bg-red-600 shadow-red-500/20" : "bg-forest-emerald hover:bg-tribal-terracotta shadow-forest-emerald/20"
+          }`}
         >
           {isLoading && !location ? <Loader2 className="w-4 h-4 animate-spin" /> : <Navigation2 className="w-4 h-4" />}
-          Locate Me & Find Places
+          {watchId !== null ? "Stop Real-time Tracking" : "Locate Me & Find Places"}
         </button>
       </div>
 
