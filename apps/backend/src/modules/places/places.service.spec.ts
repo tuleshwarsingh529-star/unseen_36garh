@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PlacesService } from './places.service';
 import { PrismaService } from '../../database/prisma.service';
+import { SocketGateway } from '../socket/socket.gateway';
 import { BadRequestException } from '@nestjs/common';
 
 describe('PlacesService Unit Tests', () => {
@@ -24,6 +25,13 @@ describe('PlacesService Unit Tests', () => {
           provide: PrismaService,
           useValue: prismaMock,
         },
+        {
+          provide: SocketGateway,
+          useValue: {
+            server: { emit: jest.fn() },
+            broadcast: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -44,12 +52,13 @@ describe('PlacesService Unit Tests', () => {
         latitude: 19.2006,
         longitude: 81.6961,
         featuredImage: 'https://images.unsplash.com/photo-1628105740446-c2ba68bf65ef',
+        status: 'DRAFT',
       };
 
       prismaMock.place.findUnique.mockResolvedValue(null);
       prismaMock.place.create.mockImplementation((args: any) => Promise.resolve(args.data));
 
-      const result = await service.create(createDto);
+      const result = await service.create(createDto, { id: 'user-id', role: 'CREATOR' });
 
       expect(result.slug).toBe('chitrakote-waterfalls-peak');
       expect(result.name).toBe(createDto.name);

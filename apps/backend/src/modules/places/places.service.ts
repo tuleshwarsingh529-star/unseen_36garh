@@ -254,12 +254,16 @@ export class PlacesService {
     try {
       const places: any[] = await this.prisma.$queryRaw`
         SELECT 
-          p.id, p.name, p.slug, p."shortDescription" as description, p.latitude, p.longitude,
+          p.id, p.name, p.slug, p."shortDescription" as description, p.latitude, p.longitude, p."heroImage",
+          d.name as district, b.name as block, c.slug as category,
           ST_Distance(
             ST_SetSRID(ST_MakePoint(p.longitude, p.latitude), 4326)::geography,
             ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography
           ) / 1000 AS distance_km
         FROM "Place" p
+        LEFT JOIN "District" d ON p."districtId" = d.id
+        LEFT JOIN "Block" b ON p."blockId" = b.id
+        LEFT JOIN "Category" c ON p."categoryId" = c.id
         WHERE p.verified = true
           AND ST_DWithin(
             ST_SetSRID(ST_MakePoint(p.longitude, p.latitude), 4326)::geography,
@@ -278,7 +282,7 @@ export class PlacesService {
           ...(district ? { district: { name: district } } : {}),
           ...(block ? { block: { name: block } } : {}) 
         },
-        include: { category: true, images: true, videos: true }
+        include: { category: true, district: true, block: true, images: true, videos: true }
       });
 
       return allPlaces
@@ -291,6 +295,9 @@ export class PlacesService {
             description: place.shortDescription,
             heroImage: place.heroImage,
             districtId: place.districtId,
+            district: place.district?.name,
+            block: place.block?.name,
+            category: place.category?.slug || place.category?.name,
             latitude: place.latitude,
             longitude: place.longitude,
             distance_km: distance 

@@ -19,8 +19,11 @@ interface Place {
   slug: string;
   district: string;
   block?: string;
+  category: string;
   heroImage: string;
   description: string;
+  latitude: number;
+  longitude: number;
   distance_km: number;
 }
 
@@ -185,10 +188,10 @@ export default function NearbyPlacesPage() {
       {places.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {places.map((place, index) => (
-            <Link key={place.id} href={`/destination/${place.slug}`} className="group relative rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 bg-white border border-charcoal-stone/5 flex flex-col h-full">
+            <div key={place.id} className="group relative rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 bg-white border border-charcoal-stone/5 flex flex-col h-full">
               
               {/* Image Header */}
-              <div className="relative h-48 w-full overflow-hidden">
+              <Link href={`/destination/${place.slug}`} className="relative h-48 w-full overflow-hidden block cursor-pointer">
                 <img 
                   src={place.heroImage} 
                   alt={place.name} 
@@ -203,28 +206,48 @@ export default function NearbyPlacesPage() {
                     {place.distance_km < 1 ? "Under 1 km" : `${place.distance_km.toFixed(1)} km`}
                   </span>
                 </div>
-              </div>
+              </Link>
 
               {/* Content */}
               <div className="p-5 flex flex-col flex-1 gap-3">
                 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-river-blue/10 text-river-blue uppercase">
                     <MapPin className="w-3 h-3" />
                     {place.district} {place.block ? `• ${place.block}` : ''}
                   </span>
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-forest-emerald/10 text-forest-emerald uppercase">
+                    {place.category}
+                  </span>
                 </div>
 
-                <h3 className="font-sans font-bold text-lg text-forest-emerald group-hover:text-tribal-terracotta transition-colors leading-tight">
-                  {place.name}
-                </h3>
+                <Link href={`/destination/${place.slug}`} className="block group-hover:text-tribal-terracotta transition-colors">
+                  <h3 className="font-sans font-bold text-lg text-forest-emerald leading-tight">
+                    {place.name}
+                  </h3>
+                </Link>
                 
                 <p className="text-xs text-charcoal-stone/60 line-clamp-2 leading-relaxed">
-                  {place.description}
+                  {place.description || "Explore this breathtaking destination."}
                 </p>
 
+                {/* Footer action links */}
+                <div className="mt-auto pt-4 border-t border-charcoal-stone/10 flex items-center justify-between">
+                  <Link href={`/destination/${place.slug}`} className="text-xs font-bold text-forest-emerald hover:text-tribal-terracotta hover:underline inline-flex items-center gap-0.5">
+                    View Details ↗
+                  </Link>
+                  <a 
+                    href={`https://www.google.com/maps/dir/?api=1&origin=${location?.lat},${location?.lng}&destination=${place.latitude},${place.longitude}`}
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="text-xs font-bold text-warm-orange hover:text-orange-600 hover:underline inline-flex items-center gap-0.5"
+                  >
+                    Directions ↗
+                  </a>
+                </div>
+
               </div>
-            </Link>
+            </div>
           ))}
         </div>
       )}

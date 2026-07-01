@@ -38,7 +38,9 @@ export default function Home() {
   interface NearbyPlace {
     id: string;
     name: string;
+    category: string;
     district?: string;
+    coordinates: { lat: number; lng: number };
     computedDistance: number;
     name_hi?: string;
     name_cg?: string;
@@ -138,7 +140,19 @@ export default function Home() {
     return () => clearInterval(timer);
   }, [heroSlidesData.length]);
 
-  // Simple geo-distance calculation (Haversine formula mock)
+  // Haversine formula calculation for exact GPS coordinate telemetry
+  const getHaversineDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371; // Earth radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return Math.round(R * c * 10) / 10; // Distance in km rounded to 1 decimal place
+  };
+
   const handleEnableGeolocation = () => {
     setLocationStatus(lang === "en" ? "Locating coordinate feed..." : lang === "cg" ? "तीर के रद्दा खोजत हंव..." : "स्थान खोजा जा रहा है...");
     if (!navigator.geolocation) {
@@ -152,26 +166,27 @@ export default function Home() {
         setUserLocation({ lat: latitude, lng: longitude });
         setLocationStatus(lang === "en" ? "Telemetry active" : lang === "cg" ? "लोकेशन मिलगे" : "टेलीमेट्री सक्रिय");
         
-        // Calculate dynamic distances to spots
+        // Calculate true geodesic distance using GPS location
         const calculated = DESTINATIONS.map((dest) => {
-          // Haversine-like calculation to mock realistic Bastar boundaries
-          const dx = dest.coordinates.lng - 81.5; // Centered near Bastar
-          const dy = dest.coordinates.lat - 19.5;
-          const distKm = Math.round(Math.sqrt(dx*dx + dy*dy) * 111 + 250); // Scale factor
+          const distKm = getHaversineDistance(latitude, longitude, dest.coordinates.lat, dest.coordinates.lng);
           return { ...dest, computedDistance: distKm };
         }).sort((a, b) => a.computedDistance - b.computedDistance);
 
-        setNearbyPlaces(calculated.slice(0, 3));
+        setNearbyPlaces(calculated.slice(0, 5));
       },
       (error) => {
-        // Fallback simulated location (Raipur airport baseline)
-        setUserLocation({ lat: 21.18, lng: 81.73 });
+        // Fallback simulated location (Raipur airport baseline: 21.18, 81.73)
+        const fallbackLat = 21.18;
+        const fallbackLng = 81.73;
+        setUserLocation({ lat: fallbackLat, lng: fallbackLng });
         setLocationStatus(lang === "en" ? "Simulated from Raipur Hub" : lang === "cg" ? "रायपुर हब से अनुमानित" : "रायपुर हब से अनुमानित");
+        
+        // Calculate true geodesic distance using Raipur fallback location
         const calculated = DESTINATIONS.map((dest) => {
-          const distKm = Math.floor(Math.random() * 200) + 80;
+          const distKm = getHaversineDistance(fallbackLat, fallbackLng, dest.coordinates.lat, dest.coordinates.lng);
           return { ...dest, computedDistance: distKm };
         }).sort((a, b) => a.computedDistance - b.computedDistance);
-        setNearbyPlaces(calculated.slice(0, 3));
+        setNearbyPlaces(calculated.slice(0, 5));
       }
     );
   };
@@ -358,23 +373,39 @@ export default function Home() {
           </div>
 
           {/* Location results sheet */}
-          <div className="w-full lg:w-96 flex flex-col gap-4">
+          <div className="w-full lg:w-[450px] flex flex-col gap-4">
             {nearbyPlaces.length > 0 ? (
               <>
                 <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-warm-orange">{t("home.closest_nodes")}</h4>
                 {nearbyPlaces.map((place) => {
                   const placeName = lang === "hi" ? (place.name_hi || place.name) : lang === "cg" ? (place.name_cg || place.name) : place.name;
                   return (
-                    <div key={place.id} className="p-4 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between hover:bg-white/10 transition-all">
-                      <div className="flex flex-col">
-                        <span className="text-xs font-bold text-white font-mukta">{placeName}</span>
+                    <div key={place.id} className="p-4 rounded-xl bg-white/5 border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-white/10 transition-all">
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center flex-wrap gap-2">
+                          <span className="text-xs font-bold text-white font-mukta">{placeName}</span>
+                          <span className="text-[9px] px-2 py-0.5 rounded bg-white/10 text-emerald-400 border border-white/5 font-mono uppercase tracking-wider font-semibold">
+                            {t("categories." + place.category)}
+                          </span>
+                        </div>
                         <span className="text-[10px] text-sand-beige/50 font-mono uppercase">{place.district} District</span>
                       </div>
-                      <div className="flex flex-col items-end">
-                        <span className="text-xs font-mono font-bold text-warm-orange">~{place.computedDistance} km</span>
-                        <Link href={`/destination/${place.id}`} className="text-[10px] hover:underline text-emerald-400 font-bold inline-flex items-center gap-0.5">
-                          Details <ChevronRight className="w-3 h-3" />
-                        </Link>
+                      <div className="flex sm:flex-col items-end justify-between sm:justify-start gap-1">
+                        <span className="text-xs font-mono font-bold text-warm-orange">{place.computedDistance} km</span>
+                        <div className="flex items-center gap-2">
+                          <Link href={`/destination/${place.id}`} className="text-[10px] hover:underline text-emerald-400 font-bold inline-flex items-center gap-0.5">
+                            Details <ChevronRight className="w-3 h-3" />
+                          </Link>
+                          <span className="text-white/20">|</span>
+                          <a 
+                            href={`https://www.google.com/maps/dir/?api=1&origin=${userLocation?.lat},${userLocation?.lng}&destination=${place.coordinates.lat},${place.coordinates.lng}`}
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="text-[10px] hover:underline text-warm-orange font-bold inline-flex items-center gap-0.5"
+                          >
+                            Directions ↗
+                          </a>
+                        </div>
                       </div>
                     </div>
                   );
