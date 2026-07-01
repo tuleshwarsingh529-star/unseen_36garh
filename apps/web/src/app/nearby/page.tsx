@@ -69,7 +69,11 @@ export default function NearbyPlacesPage() {
         setIsLoading(false);
       },
       (err) => {
-        setError("Unable to retrieve your location. Please ensure location services are enabled.");
+        setLocation({
+          lat: 22.0790,
+          lng: 82.1399,
+        });
+        setError("Unable to retrieve GPS. Simulating from Bilaspur Hub.");
         setIsLoading(false);
       },
       {

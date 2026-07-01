@@ -154,6 +154,31 @@ export default function Home() {
     return Math.round(R * c * 10) / 10; // Distance in km rounded to 1 decimal place
   };
 
+  // Helper to resolve district name from coordinates to prioritize local district recommendations first
+  const getDistrictFromCoords = (lat: number, lng: number): string => {
+    // Check if coordinates are in/near Bilaspur bounds: Lat 21.8 to 22.8, Lng 81.5 to 82.6
+    if (lat >= 21.8 && lat <= 22.8 && lng >= 81.5 && lng <= 82.6) {
+      return "Bilaspur";
+    }
+    // Raipur: Lat 20.8 to 21.8, Lng 81.2 to 82.2
+    if (lat >= 20.8 && lat <= 21.8 && lng >= 81.2 && lng <= 82.2) {
+      return "Raipur";
+    }
+    // Surguja: Lat 22.5 to 24.2, Lng 82.4 to 84.2
+    if (lat >= 22.5 && lat <= 24.2 && lng >= 82.4 && lng <= 84.2) {
+      return "Surguja";
+    }
+    // Bastar: Lat 18.8 to 19.8, Lng 81.2 to 82.2
+    if (lat >= 18.8 && lat <= 19.8 && lng >= 81.2 && lng <= 82.2) {
+      return "Bastar";
+    }
+    // Kawardha (Kabirdham): Lat 21.8 to 22.5, Lng 80.8 to 81.4
+    if (lat >= 21.8 && lat <= 22.5 && lng >= 80.8 && lng <= 81.4) {
+      return "Kawardha";
+    }
+    return "";
+  };
+
   const handleEnableGeolocation = () => {
     // Toggle tracking
     if (watchId !== null) {
@@ -177,26 +202,44 @@ export default function Home() {
         setUserLocation({ lat: latitude, lng: longitude });
         setLocationStatus(lang === "en" ? "Telemetry active (real-time tracking)" : lang === "cg" ? "लोकेशन मिलगे" : "टेलीमेट्री सक्रिय");
         
-        // Calculate true geodesic distance using GPS location
+        const userDistrict = getDistrictFromCoords(latitude, longitude);
+
+        // Calculate true geodesic distance using GPS location, sorting same-district matches first, then by distance
         const calculated = DESTINATIONS.map((dest) => {
           const distKm = getHaversineDistance(latitude, longitude, dest.coordinates.lat, dest.coordinates.lng);
           return { ...dest, computedDistance: distKm };
-        }).sort((a, b) => a.computedDistance - b.computedDistance);
+        }).sort((a, b) => {
+          const aMatch = a.district === userDistrict ? 1 : 0;
+          const bMatch = b.district === userDistrict ? 1 : 0;
+          if (aMatch !== bMatch) {
+            return bMatch - aMatch;
+          }
+          return a.computedDistance - b.computedDistance;
+        });
 
         setNearbyPlaces(calculated.slice(0, 5));
       },
       (error) => {
-        // Fallback simulated location (Raipur airport baseline: 21.18, 81.73)
-        const fallbackLat = 21.18;
-        const fallbackLng = 81.73;
+        // Fallback simulated location: Bilaspur Center (lat: 22.0790, lng: 82.1399) since the user is based in Bilaspur
+        const fallbackLat = 22.0790;
+        const fallbackLng = 82.1399;
         setUserLocation({ lat: fallbackLat, lng: fallbackLng });
-        setLocationStatus(lang === "en" ? "Simulated from Raipur Hub" : lang === "cg" ? "रायपुर हब से अनुमानित" : "रायपुर हब से अनुमानित");
+        setLocationStatus(lang === "en" ? "Simulated from Bilaspur Hub" : lang === "cg" ? "बिलासपुर हब से अनुमानित" : "बिलासपुर हब से अनुमानित");
         
-        // Calculate true geodesic distance using Raipur fallback location
+        const userDistrict = getDistrictFromCoords(fallbackLat, fallbackLng);
+
+        // Calculate true geodesic distance using Bilaspur fallback location, sorting same-district matches first, then by distance
         const calculated = DESTINATIONS.map((dest) => {
           const distKm = getHaversineDistance(fallbackLat, fallbackLng, dest.coordinates.lat, dest.coordinates.lng);
           return { ...dest, computedDistance: distKm };
-        }).sort((a, b) => a.computedDistance - b.computedDistance);
+        }).sort((a, b) => {
+          const aMatch = a.district === userDistrict ? 1 : 0;
+          const bMatch = b.district === userDistrict ? 1 : 0;
+          if (aMatch !== bMatch) {
+            return bMatch - aMatch;
+          }
+          return a.computedDistance - b.computedDistance;
+        });
         setNearbyPlaces(calculated.slice(0, 5));
       },
       {

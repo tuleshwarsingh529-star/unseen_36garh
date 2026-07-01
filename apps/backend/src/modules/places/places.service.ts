@@ -251,6 +251,7 @@ export class PlacesService {
   }
 
   async findNearby(lat: number, lng: number, radiusKm: number, district?: string, block?: string) {
+    const userDistrict = this.getDistrictFromCoords(lat, lng);
     try {
       const places: any[] = await this.prisma.$queryRaw`
         SELECT 
@@ -270,7 +271,9 @@ export class PlacesService {
             ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography,
             ${radiusKm * 1000}
           )
-        ORDER BY distance_km ASC;
+        ORDER BY 
+          CASE WHEN d.name = ${userDistrict} THEN 0 ELSE 1 END ASC,
+          distance_km ASC;
       `;
       return places;
     } catch (error) {
@@ -304,7 +307,14 @@ export class PlacesService {
           };
         })
         .filter(place => place.distance_km <= radiusKm)
-        .sort((a, b) => a.distance_km - b.distance_km);
+        .sort((a, b) => {
+          const aMatch = a.district === userDistrict ? 1 : 0;
+          const bMatch = b.district === userDistrict ? 1 : 0;
+          if (aMatch !== bMatch) {
+            return bMatch - aMatch;
+          }
+          return a.distance_km - b.distance_km;
+        });
     }
   }
 
@@ -366,5 +376,29 @@ export class PlacesService {
 
   private deg2rad(deg: number): number {
     return deg * (Math.PI / 180);
+  }
+
+  private getDistrictFromCoords(lat: number, lng: number): string {
+    // Check if coordinates are in/near Bilaspur bounds: Lat 21.8 to 22.8, Lng 81.5 to 82.6
+    if (lat >= 21.8 && lat <= 22.8 && lng >= 81.5 && lng <= 82.6) {
+      return "Bilaspur";
+    }
+    // Raipur: Lat 20.8 to 21.8, Lng 81.2 to 82.2
+    if (lat >= 20.8 && lat <= 21.8 && lng >= 81.2 && lng <= 82.2) {
+      return "Raipur";
+    }
+    // Surguja: Lat 22.5 to 24.2, Lng 82.4 to 84.2
+    if (lat >= 22.5 && lat <= 24.2 && lng >= 82.4 && lng <= 84.2) {
+      return "Surguja";
+    }
+    // Bastar: Lat 18.8 to 19.8, Lng 81.2 to 82.2
+    if (lat >= 18.8 && lat <= 19.8 && lng >= 81.2 && lng <= 82.2) {
+      return "Bastar";
+    }
+    // Kawardha (Kabirdham): Lat 21.8 to 22.5, Lng 80.8 to 81.4
+    if (lat >= 21.8 && lat <= 22.5 && lng >= 80.8 && lng <= 81.4) {
+      return "Kawardha";
+    }
+    return "";
   }
 }
